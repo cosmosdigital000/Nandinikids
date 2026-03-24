@@ -88,109 +88,54 @@ export default function MandatoryDisclosure() {
           </div>
         </div>
 
-        {/* A: GENERAL INFORMATION */}
-        <SectionTitle>A. General Information</SectionTitle>
-        <table style={tableStyle}>
-          <tbody>
-            <Row label="School Name"            value="Nandini Kids 'N' Academy" highlight />
-            <Row label="Affiliation No."         value="[To be updated — check CBSE affiliation certificate]" />
-            <Row label="School Code"             value="[To be updated]" />
-            <Row label="Complete Address"        value="Ward No. 5, Dehri Block, Rohtas District, Bihar — 821307" />
-            <Row label="Principal / Manager"     value="[Principal Name] — Replace with actual name" />
-            <Row label="Contact Number"          value={phoneDisplay} />
-            <Row label="Email Address"           value="[school@email.com] — Replace with actual email" />
-            <Row label="Website"                 value="[www.yourwebsite.com] — Replace with actual URL" />
-            <Row label="Year of Establishment"   value="2010" highlight />
-            <Row label="School Status"           value="Private Unaided" />
-            <Row label="Type"                    value="Co-Educational (Boys & Girls)" />
-            <Row label="Medium of Instruction"   value="English" />
-            <Row label="Classes Offered"         value="Pre-Nursery, Nursery, LKG, UKG, Class I to Class V" highlight />
-            <Row label="Affiliation Period"       value="[From Date] to [To Date] — check certificate" />
-          </tbody>
-        </table>
+       {/* A. General Information */}
+<SectionTitle>A. General Information</SectionTitle>
+<table style={tableStyle}>
+  <tbody>
+    <Row label="School Name" value="Nandini Kids 'N' Academy" highlight />
+    <Row label="School Code" value="893439" highlight />
+    <Row label="Address" value="Rajwarwa Bigha, Dalmianagar, Rohtas, Bihar — 821307" />
+    <Row label="Contact Number" value={phoneDisplay} />
+    <Row label="Email" value="school@email.com" />
+    <Row label="Year of Establishment" value="2010" />
+    <Row label="Classes Offered" value="Pre-Nursery to Class V" />
+    <Row label="Affiliation No." value="[Update if available]" />
+  </tbody>
+</table>
 
-        {/* B: DOCUMENTS AND CERTIFICATES */}
-        <SectionTitle>B. Documents &amp; Certificates</SectionTitle>
-        <table style={tableStyle}>
-          <thead>
-            <tr style={{ background: "#F0FDFA" }}>
-              <th style={{ padding: "10px 16px", textAlign: "left", fontSize: ".82rem", color: "#1a6e54", fontWeight: 700 }}>Document Name</th>
-              <th style={{ padding: "10px 16px", textAlign: "left", fontSize: ".82rem", color: "#1a6e54", fontWeight: 700 }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <DocRow name="Copies of Society/Trust/Company Registration Certificate" status="Available" />
-            <DocRow name="Copy of No Objection Certificate (NOC) from State Govt." status="Pending" />
-            <DocRow name="Copy of Recognition Certificate under RTE Act, 2009" status="Available" />
-            <DocRow name="Copy of Valid Building Safety Certificate from competent authority" status="Pending" />
-            <DocRow name="Copy of Valid Fire Safety Certificate from competent authority" status="Pending" />
-            <DocRow name="Copy of Self-Certification by School Principal" status="Available" />
-            <DocRow name="Copy of Valid Water, Health and Sanitation Certificate" status="Pending" />
-            <DocRow name="Copy of CBSE Affiliation / Extension of Affiliation Letter" status="Pending" />
-          </tbody>
-        </table>
-        <p style={{ fontSize: ".78rem", color: "#888", marginTop: 8, paddingLeft: 4 }}>
-          * &quot;Pending&quot; documents should be obtained and uploaded before CBSE affiliation application.
-        </p>
+{/* B. Documents */}
+<SectionTitle>B. Documents</SectionTitle>
+<table style={tableStyle}>
+  <tbody>
+    <DocRow name="Trust / Society Registration Certificate" status="Available" />
+    <DocRow name="NOC from State Govt." status="Pending" />
+    <DocRow name="Recognition Certificate (RTE)" status="Available" />
+    <DocRow name="Fire Safety Certificate" status="Pending" />
+    <DocRow name="Building Safety Certificate" status="Pending" />
+  </tbody>
+</table>
 
-        {/* C: STAFF INFORMATION */}
-        <SectionTitle>C. Staff (Teaching) Information</SectionTitle>
-        <table style={tableStyle}>
-          <tbody>
-            <Row label="Total No. of Teachers (Including PRT)"  value="13" highlight />
-            <Row label="PGT (Post Graduate Teacher)"            value="[To be updated]" />
-            <Row label="TGT (Trained Graduate Teacher)"         value="[To be updated]" />
-            <Row label="PRT (Primary Teacher)"                  value="[To be updated]" />
-            <Row label="Computer Instructor"                    value="1" />
-            <Row label="Counsellor / Special Educator"          value="[To be updated]" />
-            <Row label="No. of Administrative Staff"            value="[To be updated]" />
-            <Row label="No. of Non-Teaching Staff"              value="[To be updated]" />
-          </tbody>
-        </table>
+{/* C. Staff */}
+<SectionTitle>C. Staff Information</SectionTitle>
+<table style={tableStyle}>
+  <tbody>
+    <Row label="Total Teachers" value="13" highlight />
+    <Row label="Non-Teaching Staff" value="[Update]" />
+  </tbody>
+</table>
 
-        {/* D: SCHOOL INFRASTRUCTURE */}
-        <SectionTitle>D. School Infrastructure</SectionTitle>
-        <table style={tableStyle}>
-          <tbody>
-            <Row label="Total Campus Area (in sq. mtrs.)"       value="[To be updated]" />
-            <Row label="No. of Classrooms"                      value="10 (in good condition)" highlight />
-            <Row label="No. of Labs — Computer"                 value="1 (with 8 functional PCs)" highlight />
-            <Row label="No. of Labs — Science"                  value="[To be updated]" />
-            <Row label="Library"                                value="Available (200+ books)" highlight />
-            <Row label="Playground / Sports Area"               value="Available — outdoor playground" />
-            <Row label="Boys' Toilets"                          value="Available" />
-            <Row label="Girls' Toilets"                         value="Available" />
-            <Row label="Drinking Water"                         value="Tap Water — Safe & Clean" />
-            <Row label="Electricity"                            value="Available — Fully electrified" />
-            <Row label="Boundary Wall"                          value="Pucca — Full boundary" />
-            <Row label="Ramp for disabled"                      value="[To be updated]" />
-          </tbody>
-        </table>
-
-        {/* E: RESULTS AND ACADEMICS */}
-        <SectionTitle>E. Results &amp; Academics</SectionTitle>
-        <table style={tableStyle}>
-          <tbody>
-            <Row label="Board / Pattern"                        value="CBSE Pattern" highlight />
-            <Row label="Year of First Batch"                    value="2010" />
-            <Row label="Pass Percentage (Last Academic Year)"   value="[To be updated with actual result]" />
-            <Row label="No. of Students Appeared"               value="[To be updated]" />
-            <Row label="No. of Students Passed"                 value="[To be updated]" />
-          </tbody>
-        </table>
-
-        {/* F: FEE STRUCTURE */}
-        <SectionTitle>F. Fee Structure</SectionTitle>
-        <table style={tableStyle}>
-          <tbody>
-            <Row label="Nursery / LKG / UKG"    value="[To be updated — add actual fee]" />
-            <Row label="Class I – Class III"     value="[To be updated — add actual fee]" />
-            <Row label="Class IV – Class V"      value="[To be updated — add actual fee]" />
-            <Row label="Transport Fee"           value="[To be updated — varies by area]" />
-            <Row label="Admission Fee (One-time)" value="[To be updated]" />
-            <Row label="Other Charges"           value="Nil — No hidden charges" highlight />
-          </tbody>
-        </table>
+{/* D. Infrastructure */}
+<SectionTitle>D. Infrastructure</SectionTitle>
+<table style={tableStyle}>
+  <tbody>
+    <Row label="Classrooms" value="10" highlight />
+    <Row label="Library" value="Available" />
+    <Row label="Playground" value="Available" />
+    <Row label="Boys Toilets" value="Available" />
+    <Row label="Girls Toilets" value="Available" />
+    <Row label="Drinking Water" value="Available" />
+  </tbody>
+</table>
 
         {/* Back button */}
         <div style={{ textAlign: "center", marginTop: 40 }}>

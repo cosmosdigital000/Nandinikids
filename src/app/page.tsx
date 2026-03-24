@@ -902,7 +902,6 @@ export default function NandiniKidsAcademy() {
                   }}
                 />
                 <div style={{ fontSize: "0.85rem", color: "#555", marginTop: "10px", fontWeight: 600 }}>
-                  Hamare school ka asli nazara — bacche aur teachers saath mein
                 </div>
               </div>
             </div>
@@ -1042,7 +1041,7 @@ export default function NandiniKidsAcademy() {
                 marginBottom: "24px",
                 lineHeight: 1.2
               }}>
-                Hamara School - Aapke Bachon Ka Dusra Ghar Hai🏡
+                
               </h2>
               
               <div style={{
@@ -1058,10 +1057,7 @@ export default function NandiniKidsAcademy() {
                   lineHeight: 1.7,
                   fontStyle: "italic"
                 }}>
-                  "Hum sirf padhaate nahi hain, bachon ko sanskaar bhi dete hain. 
-                  Yahan har bachha special hai, har bachha star hai. 
-                  English medium mein quality education ke saath-saath 
-                  Indian values bhi sikhate hain."
+                  "We don’t just teach — we also install values in children. Here, every child is special, every child is a star. Along with quality education, meaningful academic outcomes, we also teach Indian values."
                 </p>
                 <div style={{
                   textAlign: "right",
@@ -1120,7 +1116,7 @@ export default function NandiniKidsAcademy() {
 Our Achivements 
                 </h3>
                 <p style={{fontSize: "1.1rem", marginBottom: "20px", opacity: 0.9}}>
-                  2019 se lekar aaj tak  bachon ko successful banaya hai
+                Since 2019, We have successfully transformed thousands of children into confident and successful individuals.
                 </p>
                 
                 <div className="grid grid-cols-2 gap-4 mt-6">
@@ -1177,9 +1173,7 @@ Our Achivements
             }}>
               Enjoyment and Activities at NandiniKids
             </h2>
-            <p style={{color: "#666", fontSize: "1.1rem"}}>
-              Real photos aur videos - koi fake nahi, sab genuine hai!
-            </p>
+            
           </div>
 
           {/* Photo grid — real campus & celebration photos */}
@@ -1272,10 +1266,9 @@ Our Achivements
             color: "white"
           }}>
             <div style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: "6px" }}>
-              📸 Photo pe click karke bada size mein dekho
             </div>
             <div style={{ fontSize: "0.95rem", opacity: 0.95 }}>
-              Asli school moments — celebrations, learning aur khushi ke pal
+              Real school moments — celebrations, enjoyment and learning with happiness.
             </div>
           </div>
         </div>
@@ -1295,7 +1288,7 @@ Our Achivements
               color: "#2C1810",
               marginBottom: "16px"
             }}>
-              English Medium Mein Strong Foundation 📚
+              English Medium for a Strong Foundation 📚
             </h2>
             <p style={{color: "#666", fontSize: "1.1rem"}}>
               Nursery se Class 5 tak - har class mein quality education
@@ -1331,26 +1324,12 @@ Our Achivements
                 </div>
               </div>
 
-              <div style={{
-                background: "linear-gradient(135deg, #FFF0F5, #F0F8FF)",
-                borderRadius: "20px",
-                padding: "24px",
-                border: "3px solid #8A2BE2"
-              }}>
-                <h4 style={{fontSize: "1.3rem", fontWeight: 700, color: "#2C1810", marginBottom: "16px"}}>
-                  English Medium Explanation 🗣️
-                </h4>
-                <p style={{color: "#555", lineHeight: 1.7, fontSize: "1rem"}}>
-                  Saare subjects English mein padhate hain, lekin Hindi bhi sikhate hain. 
-                  Bachhe dono language mein comfortable ho jaate hain. 
-                  Speaking, reading, writing - sab kuch English mein strong banate hain.
-                </p>
-              </div>
+              
             </div>
 
             <div>
               <h3 style={{fontSize: "1.5rem", fontWeight: 700, color: "#2C1810", marginBottom: "24px"}}>
-                Teaching Approach 👩‍🏫
+                Our Teaching Approach 👩‍🏫
               </h3>
               
               <div className="flex flex-col gap-4">
@@ -1423,7 +1402,7 @@ Our Achivements
               style={{ width: "100%", maxHeight: "340px", objectFit: "cover", display: "block" }}
             />
             <div style={{ background: "#fff", padding: "14px 18px", textAlign: "center", fontWeight: 700, color: "#2C1810" }}>
-              🏫 Hamara campus — safe, clean aur bachon ke liye designed
+             A campus — Designed with safety, cleanliness and full of life. 
             </div>
           </div>
           <div style={{textAlign: "center", marginBottom: "60px"}}>
@@ -1433,10 +1412,8 @@ Our Achivements
               color: "#2C1810",
               marginBottom: "16px"
             }}>
-              Mummy Ko Tension Nahi - Baccha Safe Hai Hamare Paas 🙏
-            </h2>
+Our Facilities            </h2>
             <p style={{color: "#666", fontSize: "1.1rem"}}>
-              Safety = major conversion trigger for mothers
             </p>
           </div>
 
@@ -1445,7 +1422,7 @@ Our Achivements
               {
                 icon: "📹",
                 title: "CCTV surveillance (24/7)",
-                desc: "Poore campus mein cameras - har corner safe hai",
+                desc: "Poore campus mein cameras- safety in every corner",
                 color: "#FF6347"
               },
               {
@@ -1457,7 +1434,7 @@ Our Achivements
               {
                 icon: "🚽",
                 title: "Clean toilets",
-                desc: "Separate boys aur girls toilets - hamesha clean",
+                desc: "Separate boys and girls toilets",
                 color: "#00BFFF"
               },
               {
@@ -1468,14 +1445,14 @@ Our Achivements
               },
               {
                 icon: "🚌",
-                title: "Transport tracking",
-                desc: "Bus ki location parents ko pata rehti hai",
+                title: "Transport available",
+                desc: "Trained and sincere Drivers for safe transportation.",
                 color: "#FF4500"
               },
               {
                 icon: "🏗️",
                 title: "Pucca boundary wall",
-                desc: "Strong wall - bahar se koi nahi aa sakta",
+                desc: "Strong wall",
                 color: "#8A2BE2"
               }
             ].map(({icon, title, desc, color}) => (
@@ -1551,8 +1528,7 @@ Our Achivements
               color: "#2C1810",
               marginBottom: "16px"
             }}>
-              Dekho Kya Kehte Hain Dusre Parents 👨‍👩‍👧‍👦
-            </h2>
+What does the parents say?            </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -1660,35 +1636,35 @@ Our Achivements
           </div>
 
           <div className="grid md:grid-cols-4 gap-8 mb-12">
-            {[
-              {
-                step: 1,
-                icon: "📞",
-                title: "Call karo ya form bharo",
-                desc: "Phone kar ke enquiry karo ya online form bharo",
-                color: "#FF1493"
-              },
-              {
-                step: 2,
-                icon: "🏫",
-                title: "School visit karo",
-                desc: "Campus dekho, teachers se milo, facilities check karo",
-                color: "#8A2BE2"
-              },
-              {
-                step: 3,
-                icon: "👦",
-                title: "Bacche se baat karenge",
-                desc: "Simple interaction - koi scary exam nahi",
-                color: "#00FA9A"
-              },
-              {
-                step: 4,
-                icon: "✅",
-                title: "Admission confirm!",
-                desc: "Documents complete karo aur admission pakka!",
-                color: "#FF4500"
-              }
+  {[
+    {
+      step: 1,
+      icon: "📞",
+      title: "Call or fill the form",
+      desc: "Make an enquiry by calling or fill out the online form",
+      color: "#FF1493"
+    },
+    {
+      step: 2,
+      icon: "🏫",
+      title: "Visit the school",
+      desc: "Explore the campus, meet the teachers, and check the facilities",
+      color: "#8A2BE2"
+    },
+    {
+      step: 3,
+      icon: "👦",
+      title: "Interaction with the child",
+      desc: "A simple interaction – no scary exam",
+      color: "#00FA9A"
+    },
+    {
+      step: 4,
+      icon: "✅",
+      title: "Admission confirmed!",
+      desc: "Complete the documents and secure admission",
+      color: "#FF4500"
+    }
             ].map(({step, icon, title, desc, color}) => (
               <div key={step} className="card p-6" style={{
                 background: "white",
@@ -2009,7 +1985,7 @@ Our Achivements
               color: "#2C1810",
               marginBottom: "16px"
             }}>
-              Aao Milne — Hum Real Hain! 😄
+              Lets Visit Us! 😄
             </h2>
           </div>
 
@@ -2056,23 +2032,7 @@ Our Achivements
                   </p>
                 </div>
 
-                <div style={{
-                  background: "linear-gradient(135deg, #E0FFFF, #B0E0E6)",
-                  borderRadius: "20px",
-                  padding: "24px",
-                  border: "3px solid white"
-                }}>
-                  <div className="flex items-center gap-4 mb-3">
-                    <div style={{fontSize: "2.5rem"}}>🚗</div>
-                    <h3 style={{fontSize: "1.3rem", fontWeight: 700, color: "#2C1810"}}>
-                      How to Reach
-                    </h3>
-                  </div>
-                  <p style={{fontSize: "1rem", color: "#444", lineHeight: 1.6}}>
-                    Auto se easily pahunch sakte hain. Main road se just 5 minute walk. 
-                    Bus stop se bhi pass hai. Transport facility bhi available hai.
-                  </p>
-                </div>
+               
 
                 <div className="flex flex-wrap gap-4">
                   <a 
@@ -2343,7 +2303,7 @@ Our Achivements
             <div style={{fontSize: "0.9rem"}}>
               <span style={{color: "#FFD700"}}>Made with 💜 for little stars</span>
               {" · "}
-              <span style={{color: "#aaa"}}>Website designed for Bihar parents</span>
+              <span style={{color: "#aaa"}}></span>
             </div>
           </div>
         </div>
