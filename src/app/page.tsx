@@ -1175,7 +1175,9 @@ Our Achivements
               color: "#2C1810",
               marginBottom: "16px"
             }}>
-Enjoyment and Activitiesat NandiniKids            <p style={{color: "#666", fontSize: "1.1rem"}}>
+              Enjoyment and Activities at NandiniKids
+            </h2>
+            <p style={{color: "#666", fontSize: "1.1rem"}}>
               Real photos aur videos - koi fake nahi, sab genuine hai!
             </p>
           </div>
