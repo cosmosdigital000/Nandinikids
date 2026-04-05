@@ -12,4 +12,8 @@ export function waWithText(message: string) {
   return `${waBaseUrl}?text=${encodeURIComponent(message)}`;
 }
 
-export const phoneDisplay = `+91 ${SCHOOL_PHONE_DIGITS.slice(0, 5)}-${SCHOOL_PHONE_DIGITS.slice(5)}`;
+export const phoneDisplay = `+91 ${SCHOOL_PHONE_DIGITS.slice(0, 5)}${SCHOOL_PHONE_DIGITS.slice(5)}`;
+
+/** Principal & director photo for the About quote card (`public/landingpage/`). */
+export const PRINCIPAL_PORTRAIT_FILE =
+  "principal and director nandini kids dalmiyanagar dehri on sone.jpg";

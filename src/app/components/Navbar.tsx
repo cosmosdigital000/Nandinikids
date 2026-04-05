@@ -40,7 +40,7 @@ export default function Navbar() {
   const items: { label: string; hash?: string; page?: string; cta?: boolean }[] = [
     { label: "About Us",              hash: "#about" },
     { label: "Infrastructure",        hash: "#infrastructure" },
-    { label: "Gallery",               hash: "#gallery" },
+    { label: "Gallery",               page: "/gallery" },
     { label: "Admission",             hash: "#admission", cta: true },
     { label: "Notice Board",          page: "/notice-board" },
     { label: "Mandatory Disclosure",  page: "/mandatory-disclosure" },
@@ -135,7 +135,7 @@ export default function Navbar() {
             </div>
             <div className="nk-logo-text">
               <span className="nk-logo-name">Nandini Kids &apos;N&apos; Academy</span>
-              <span className="nk-logo-sub">Ward No. 5, Dehri · Rohtas, Bihar · Est. 2010</span>
+              <span className="nk-logo-sub">Dalmiyanagar, Rohtas, Bihar · Est. 2019</span>
             </div>
           </Link>
 
