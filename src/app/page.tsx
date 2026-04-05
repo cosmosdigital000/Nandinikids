@@ -1979,25 +1979,25 @@ What does the parents say?            </h2>
             {[
               {
                 name: "Sunita Devi",
-                quote: "Mere bacche ki English 6 mahine mein bahut improve hui. Teacher bahut caring hain aur daily update dete hain.",
+                quote: "Mere bacche ki padhai 6 mahine mein bahut improve hui hai. Teacher bahut caring hain aur daily update dete hain.",
                 rating: 5,
                 bg: "linear-gradient(135deg, #FFE4E1, #FFC0CB)"
               },
               {
                 name: "Rajesh Kumar",
-                quote: "Transport facility bahut achhi hai. Ghar se school tak safe delivery. CCTV se pura confidence hai.",
+                quote: "Transport facility bahut achhi hai. Ghar se school tak safe delivery rahta hai.",
                 rating: 5,
                 bg: "linear-gradient(135deg, #E0FFFF, #B0E0E6)"
               },
               {
                 name: "Priya Singh",
-                quote: "Computer lab dekh kar bahut khushi hui. Baccha ghar aakar computer ke baare mein bolta rehta hai.",
+                quote: "Computer lab dekh kar bahut khushi hui. Principal sir khud itna dhyan dete hain ki har bachha computer me starting se hi advance ho jata hai",
                 rating: 5,
                 bg: "linear-gradient(135deg, #F5FFFA, #98FB98)"
               },
               {
                 name: "Amit Sharma",
-                quote: "Fees reasonable hai aur quality education mil rahi hai. Principal madam bahut supportive hain.",
+                quote: "Fees reasonable hai aur quality education mil rahi hai. Principal Sir bahut supportive hain.",
                 rating: 4,
                 bg: "linear-gradient(135deg, #FFF8DC, #F0E68C)"
               },
