@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import { SITE_LOGO_URL } from "@/lib/landingMedia";
 
 export const metadata: Metadata = {
   title: "Nandini Kids 'N' Academy – English Medium School | Dehri, Rohtas, Bihar",
   description:
     "Nandini Kids 'N' Academy – Trusted English-medium school in Dehri, Rohtas, Bihar. Nursery to Class V. Admissions open 2025-26. Computer Lab, Library, Safe Campus.",
+  icons: {
+    icon: [{ url: SITE_LOGO_URL, type: "image/jpeg" }],
+    apple: [{ url: SITE_LOGO_URL }],
+    shortcut: SITE_LOGO_URL,
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

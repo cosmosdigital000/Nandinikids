@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { landingImage } from "@/lib/landingMedia";
+import { SITE_LOGO_URL } from "@/lib/landingMedia";
 
 const NAV_H = 66; // navbar height in px — keep in sync with CSS
-const LOGO_SRC = landingImage("logo nandinikids.jpg");
+const LOGO_SRC = SITE_LOGO_URL;
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);

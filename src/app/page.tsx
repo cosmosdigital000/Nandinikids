@@ -1,2913 +1,1229 @@
 "use client";
-import Head from "next/head";
-import Link from "next/link";
-import { useEffect, useState, useRef, useCallback } from "react";
-import { telHref, waWithText, phoneDisplay, PRINCIPAL_PORTRAIT_FILE } from "@/config/contact";
-import { GALLERY_ALBUMS } from "@/config/gallery";
-import { landingImage as lp } from "@/lib/landingMedia";
 
-type ChildGameTrait = "creative" | "analytical" | "communicator" | "builder";
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
+import { SITE_LOGO_FILE } from "@/lib/landingMedia";
 
-const CHILD_GAME_QUESTIONS: {
-  prompt: string;
-  options: { label: string; icon: string; trait: ChildGameTrait }[];
-}[] = [
-  {
-    prompt: "What does your child enjoy most?",
-    options: [
-      { label: "Drawing & colors", icon: "🎨", trait: "creative" },
-      { label: "Numbers & puzzles", icon: "🔢", trait: "analytical" },
-      { label: "Talking & storytelling", icon: "🗣", trait: "communicator" },
-      { label: "Building things", icon: "🧩", trait: "builder" },
-    ],
-  },
-  {
-    prompt: "How does your child solve problems?",
-    options: [
-      { label: "Thinks creatively", icon: "💡", trait: "creative" },
-      { label: "Follows logic", icon: "📐", trait: "analytical" },
-      { label: "Asks questions", icon: "❓", trait: "communicator" },
-      { label: "Tries hands-on", icon: "✋", trait: "builder" },
-    ],
-  },
-  {
-    prompt: "What excites your child?",
-    options: [
-      { label: "Art & music", icon: "🎭", trait: "creative" },
-      { label: "Science & math", icon: "🔬", trait: "analytical" },
-      { label: "Communication", icon: "💬", trait: "communicator" },
-      { label: "Activities & sports", icon: "⚽", trait: "builder" },
-    ],
-  },
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG — edit these to match your real values
+// ─────────────────────────────────────────────────────────────────────────────
+const PHONE       = "9876543210";                      // ← replace
+const PHONE_DISP  = "+91 98765 43210";                 // ← replace
+const TEL         = `tel:+91${PHONE}`;
+const WA          = (t: string) => `https://wa.me/91${PHONE}?text=${encodeURIComponent(t)}`;
+const WA_DEFAULT  = WA("Hello! I want to know about Nandini Kids Academy.");
+const WA_ADMIT    = WA("Hello! I want to know about admission for my child in Nandini Kids Academy.");
+
+// Image helper — in Next.js replace with: import { landingImage as lp } from "@/lib/landingMedia";
+const lp = (file: string) => `/landingpage/${encodeURIComponent(file)}`;
+
+const PRINCIPAL_FILE =
+  "principal and director nandini kids dalmiyanagar dehri on sone.jpg";
+const SCHOOL_PHOTO    = "nandini real school photo.jpeg";
+const TEACHERS_PHOTO  = "teacher community group.jpg";
+const MONKEY_GIF      = "monkey swinging through a vine.gif";
+const KID_RUNNING_GIF = "kid going school running..gif";
+const HORSE_GIF       = "kids toy horse moving..gif";
+
+const GALLERY_ALBUMS = [
+  { id:"annual-day",       title:"Annual Day",          desc:"Cultural programs mein bacche",            images:["annuals day nandini kids.jpg"],                                                  color:"#FF6B9D", emoji:"🎭" },
+  { id:"academic-success", title:"Academic Success",    desc:"Celebrations & milestones",                images:["Academic Success celebration nandini kids Dalmiyanagar.jpg"],                    color:"#26C6DA", emoji:"🏆" },
+  { id:"christmas",        title:"Christmas",           desc:"Festive celebrations",                     images:["Christmas celebration nandini kids Dalmiyanagar.jpg"],                          color:"#4FC3F7", emoji:"🎄" },
+  { id:"janmashtami",      title:"Janmashtami & Dandiya",desc:"Traditional festivities",                images:["Dandiya and KrishnaJanmashtami Celebration nandini kids Dalmiyanagar.jpg"],      color:"#66BB6A", emoji:"🦚" },
+  { id:"holi",             title:"Holi",                desc:"Rang aur khushi",                         images:["Holi celebration nandini kids Dalmiyanagar.jpg"],                               color:"#AB47BC", emoji:"🌈" },
+  { id:"saraswati",        title:"Saraswati Puja",      desc:"Blessings for learning",                  images:["saraswati pooja celebration nandini kids Dalmiyanagar.jpg"],                    color:"#FF9800", emoji:"🪔" },
 ];
 
-const CHILD_GAME_RESULT_COPY: Record<
-  ChildGameTrait,
-  { emoji: string; title: string; blurb: string }
-> = {
-  creative: {
-    emoji: "🌟",
-    title: "Your child is a Creative Explorer!",
-    blurb:
-      "At our school, we nurture creativity through art-integrated learning, storytelling, and project-based activities.",
-  },
-  analytical: {
-    emoji: "🔢",
-    title: "Your child is a Bright Thinker!",
-    blurb:
-      "At our school, we strengthen English, math, and science with puzzles, clear concepts, and curiosity-led learning.",
-  },
-  communicator: {
-    emoji: "🗣",
-    title: "Your child is a Confident Communicator!",
-    blurb:
-      "At our school, we emphasize spoken English, storytelling, and classroom conversations so every child finds their voice.",
-  },
-  builder: {
-    emoji: "🧩",
-    title: "Your child is a Hands-On Learner!",
-    blurb:
-      "At our school, we learn by doing — activities, projects, and movement help ideas become real confidence.",
-  },
+const NOTICES = [
+  { date:"20 Mar 2025", title:"Admissions Open for Session 2025–26",   category:"Admission", important:true,  body:`Nursery se Class V tak admissions shuru. Limited seats — call now: ${PHONE_DISP}. No entrance test!` },
+  { date:"15 Mar 2025", title:"Annual Day Celebration — 28 March 2025",category:"Event",     important:true,  body:"School Annual Day 28 March 2025, 10:00 AM. Bacche songs, dances & skits perform karenge. Parents invited!" },
+  { date:"10 Mar 2025", title:"Unit Test 1 Schedule — March 2025",     category:"Exam",      important:false, body:"Class I–V ke liye Unit Test: 24 Mar (English), 25 Mar (Maths), 26 Mar (EVS/Hindi)." },
+  { date:"05 Mar 2025", title:"Holi Holiday Notice",                    category:"Holiday",   important:false, body:"School closed 13–14 March 2025 (Holi). Reopens 17 March (Monday). 🌈" },
+  { date:"01 Mar 2025", title:"Parent-Teacher Meeting — 8 March",      category:"General",   important:true,  body:"PTM on Saturday 8 March, 9 AM–12 PM. Collect progress card. All parents welcome." },
+  { date:"22 Feb 2025", title:"Fee Payment Reminder — Last Date 28 Feb",category:"Fee",      important:false, body:"February fees last date 28 Feb. Late fine from 1st March. Office: Mon–Sat 9 AM–3 PM." },
+  { date:"14 Feb 2025", title:"Republic Day Celebration Photos",        category:"Event",     important:false, body:"26 January celebration photos on notice board. Coming soon to WhatsApp group! 🇮🇳" },
+  { date:"01 Feb 2025", title:"Computer Lab Upgraded",                  category:"General",   important:false, body:"8 new PCs + updated CAL software. Better digital learning for all students! 💻" },
+];
+
+const FAQS = [
+  { q:"Is transport available?",        a:"Yes — door-to-door safe transport with GPS tracking. Fees charged separately." },
+  { q:"Medium of instruction?",         a:"English medium with strong Hindi. We focus on spoken English so every child finds their voice." },
+  { q:"Age requirement for Nursery?",   a:"3+ years for Nursery, 4+ for LKG, 5+ for UKG. Birth certificate required as age proof." },
+  { q:"CBSE or State Board?",           a:"We follow the CBSE pattern but are State Board affiliated. Same quality of education." },
+  { q:"Is the campus safe & monitored?",a:"Full CCTV coverage 24/7, secured boundary wall, and female staff for small kids." },
+];
+
+const STEPS = [
+  { n:1, icon:"📞", title:"Call / Fill Form",   desc:"Enquire by calling or fill online form", color:"#FF6B9D" },
+  { n:2, icon:"🏫", title:"Visit the School",   desc:"Explore campus, meet teachers",           color:"#7C4DFF" },
+  { n:3, icon:"👶", title:"Child Interaction",  desc:"Simple interaction — no scary exam",      color:"#00BCD4" },
+  { n:4, icon:"✅", title:"Admission Confirmed!",desc:"Complete docs & secure the seat",        color:"#4CAF50" },
+];
+
+const QUIZ_Q = [
+  { prompt:"My child loves…",          opts:[{label:"Drawing & colors",emoji:"🎨",trait:"creative"},{label:"Numbers & puzzles",emoji:"🔢",trait:"analytical"},{label:"Talking & stories",emoji:"🗣",trait:"communicator"},{label:"Building things",emoji:"🧩",trait:"builder"}] },
+  { prompt:"When stuck, my child…",    opts:[{label:"Thinks creatively",emoji:"💡",trait:"creative"},{label:"Follows logic",emoji:"📐",trait:"analytical"},{label:"Asks questions",emoji:"❓",trait:"communicator"},{label:"Tries hands-on",emoji:"✋",trait:"builder"}] },
+  { prompt:"My child gets excited by…",opts:[{label:"Art & music",emoji:"🎭",trait:"creative"},{label:"Science & math",emoji:"🔬",trait:"analytical"},{label:"Making friends",emoji:"💬",trait:"communicator"},{label:"Sports & activities",emoji:"⚽",trait:"builder"}] },
+];
+
+const QUIZ_RESULTS = {
+  creative:     { emoji:"🌟", title:"Creative Explorer!",       blurb:"We nurture creativity through art-integrated learning, storytelling & project-based activities." },
+  analytical:   { emoji:"🔢", title:"Bright Thinker!",          blurb:"We strengthen English, Math & Science with puzzles, clear concepts & curiosity-led learning." },
+  communicator: { emoji:"🗣", title:"Confident Communicator!",  blurb:"We emphasise spoken English, storytelling & conversations — every child finds their voice." },
+  builder:      { emoji:"🧩", title:"Hands-On Learner!",        blurb:"We learn by doing — activities, projects & movement turn ideas into real confidence." },
 };
 
-function computeChildGameResult(traits: ChildGameTrait[]): ChildGameTrait {
-  const counts: Record<ChildGameTrait, number> = {
-    creative: 0,
-    analytical: 0,
-    communicator: 0,
-    builder: 0,
-  };
-  for (const t of traits) counts[t]++;
-  let best: ChildGameTrait = "creative";
-  let bestN = -1;
-  (Object.keys(counts) as ChildGameTrait[]).forEach((k) => {
-    if (counts[k] > bestN) {
-      bestN = counts[k];
-      best = k;
-    }
-  });
-  return best;
+const MANDATORY_DISCLOSURE = [
+  { section:"A. General Information",  items:[
+    ["Name of School",                  "Nandini Kids 'N' Academy"],
+    ["Affiliation No.",                 "— (State Board affiliated)"],
+    ["School Code",                     "—"],
+    ["Complete Address",                "Dalmiyanagar, Rohtas, Bihar"],
+    ["Principal Name",                  "—"],
+    ["Contact No.",                     PHONE_DISP],
+    ["Email",                           "—"],
+    ["Year of Establishment",           "2019"],
+    ["Status of School",                "Co-educational"],
+  ]},
+  { section:"B. Documents & Certificates", items:[
+    ["NOC from State Govt / UT",        "Available at office"],
+    ["Recognition Certificate",         "Available at office"],
+    ["Building Safety Certificate",     "Issued by competent authority"],
+    ["Fire Safety Certificate",         "Issued by competent authority"],
+    ["Self-Certification",              "Submitted"],
+  ]},
+  { section:"C. Result & Academics", items:[
+    ["Classes Offered",                 "Nursery, LKG, UKG, Class 1–5"],
+    ["Medium of Instruction",           "English (Hindi also taught)"],
+    ["Total No. of Students",           "1000+"],
+    ["Pass Percentage",                 "100%"],
+  ]},
+  { section:"D. Staff", items:[
+    ["Total No. of Teachers",           "20+"],
+    ["Trained Teachers",                "All trained & qualified"],
+    ["Support Staff",                   "Available"],
+  ]},
+];
+
+type PageId = "home" | "gallery" | "notices" | "disclosure";
+type GalleryAlbum = (typeof GALLERY_ALBUMS)[number];
+type QuizTrait = keyof typeof QUIZ_RESULTS;
+type LightboxState = { album: GalleryAlbum; index: number };
+type SetPage = (page: PageId) => void;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL CSS
+// ─────────────────────────────────────────────────────────────────────────────
+const G = String.raw;
+const GLOBAL_CSS = G`
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap');
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --pink:#FF6B9D;--purple:#7C4DFF;--yellow:#FFD600;--teal:#00BCD4;
+    --green:#4CAF50;--orange:#FF9800;--ink:#1A1A2E;--cream:#FAFAF8;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
+  .brand{font-family:'Baloo 2',cursive}
+  section,main{scroll-margin-top:66px}
+
+  /* ── NAV ── */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:900;height:66px;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(14px);
+    border-bottom:1.5px solid rgba(124,77,255,.12);
+    display:flex;align-items:center;padding:0 20px;transition:box-shadow .2s}
+  .nav.scrolled{box-shadow:0 4px 24px rgba(0,0,0,.09)}
+  .nav-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between}
+  .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer;border:none;background:none;padding:0}
+  .nav-logo-ring{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+  .nav-logo-name{font-family:'Baloo 2',cursive;font-size:.92rem;font-weight:800;color:var(--purple);line-height:1.1}
+  .nav-logo-sub{font-size:.58rem;color:#888;font-weight:600}
+  .nav-links{display:flex;align-items:center;gap:3px}
+  .nav-link{padding:6px 10px;border-radius:8px;font-size:.8rem;font-weight:700;color:#555;text-decoration:none;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;transition:color .15s,background .15s}
+  .nav-link:hover,.nav-link.active{color:var(--purple);background:rgba(124,77,255,.09)}
+  .nav-cta{padding:9px 18px;border-radius:50px;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-weight:800;font-size:.82rem;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(255,107,157,.35);transition:transform .18s,box-shadow .18s;border:none;cursor:pointer;font-family:'Nunito',sans-serif}
+  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,157,.45)}
+  .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:6px}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:all .25s}
+  .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .hamburger.open span:nth-child(2){opacity:0}
+  .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .drawer{position:fixed;top:66px;left:0;right:0;background:#fff;z-index:890;padding:14px;
+    border-bottom:2px solid rgba(124,77,255,.1);transform:translateY(-110%);
+    transition:transform .28s ease;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+  .drawer.open{transform:translateY(0)}
+  .drawer-link{display:block;padding:12px 8px;font-weight:700;color:var(--ink);
+    text-decoration:none;border-bottom:1px solid #f0f0f0;font-size:.95rem;
+    background:none;border-right:none;border-left:none;border-top:none;cursor:pointer;
+    text-align:left;width:100%;font-family:'Nunito',sans-serif}
+  .drawer-link:last-child{border-bottom:none}
+
+  /* ── BUTTONS ── */
+  .btn-p{padding:14px 28px;border-radius:50px;background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:#fff;font-weight:800;font-size:1rem;text-decoration:none;border:none;cursor:pointer;
+    box-shadow:0 8px 28px rgba(255,107,157,.38);transition:transform .2s,box-shadow .2s;display:inline-block;font-family:'Nunito',sans-serif}
+  .btn-p:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(255,107,157,.48)}
+  .btn-g{padding:13px 24px;border-radius:50px;border:2px solid rgba(124,77,255,.35);color:var(--purple);
+    font-weight:800;font-size:1rem;text-decoration:none;background:transparent;cursor:pointer;
+    transition:all .2s;display:inline-block;font-family:'Nunito',sans-serif}
+  .btn-g:hover{background:rgba(124,77,255,.08)}
+  .btn-game{padding:13px 24px;border-radius:50px;background:linear-gradient(135deg,var(--purple),#4A00E0);
+    color:#fff;font-weight:800;font-size:.92rem;border:none;cursor:pointer;
+    box-shadow:0 6px 22px rgba(124,77,255,.38);animation:gamePulse 2s ease-in-out infinite;
+    display:inline-block;font-family:'Nunito',sans-serif}
+  @keyframes gamePulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .btn-game:hover{animation-play-state:paused}
+  .btn-wa{padding:13px 24px;border-radius:50px;background:#25D366;color:#fff;font-weight:800;
+    font-size:1rem;text-decoration:none;display:inline-block;transition:transform .2s;font-family:'Nunito',sans-serif}
+  .btn-wa:hover{transform:translateY(-3px)}
+  .btn-white{padding:13px 24px;border-radius:50px;background:#fff;color:var(--purple);font-weight:800;
+    font-size:1rem;text-decoration:none;border:none;cursor:pointer;
+    box-shadow:0 4px 16px rgba(0,0,0,.12);transition:transform .2s;display:inline-block;font-family:'Nunito',sans-serif}
+  .btn-white:hover{transform:translateY(-2px)}
+  .btn-orange{padding:12px 26px;border-radius:50px;background:linear-gradient(135deg,var(--orange),#E65100);
+    color:#fff;font-weight:800;font-size:.95rem;text-decoration:none;
+    box-shadow:0 6px 20px rgba(255,152,0,.3);display:inline-block;transition:transform .2s;font-family:'Nunito',sans-serif}
+  .btn-orange:hover{transform:translateY(-2px)}
+
+  /* ── LAYOUT ── */
+  .sec{padding:72px 20px;position:relative;overflow:hidden}
+  .inner{max-width:1100px;margin:0 auto}
+  .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.16;pointer-events:none;z-index:0}
+  .rel{position:relative;z-index:1}
+  .sec-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(124,77,255,.08);
+    border:1.5px solid rgba(124,77,255,.2);color:var(--purple);padding:4px 14px;
+    border-radius:50px;font-size:.73rem;font-weight:800;letter-spacing:.06em;margin-bottom:12px}
+  .sec-h2{font-family:'Baloo 2',cursive;font-size:clamp(1.7rem,4vw,2.5rem);color:var(--ink);
+    line-height:1.2;margin-bottom:10px}
+  .sec-p{color:#666;font-size:1rem;line-height:1.7;max-width:560px}
+
+  /* ── HERO ── */
+  .hero{min-height:100vh;padding:86px 20px 60px;display:flex;align-items:center;
+    background:linear-gradient(160deg,#fff5fb 0%,#f0f4ff 50%,#f5fffc 100%)}
+  .hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(124,77,255,.1);
+    border:1.5px solid rgba(124,77,255,.25);color:var(--purple);padding:5px 14px;
+    border-radius:50px;font-size:.78rem;font-weight:800;letter-spacing:.05em;margin-bottom:20px}
+  .hero-h1{font-family:'Baloo 2',cursive;font-size:clamp(2.2rem,7vw,3.8rem);line-height:1.1;
+    color:var(--ink);margin-bottom:18px}
+  .hero-h1 .grad{background:linear-gradient(135deg,var(--pink),var(--purple));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .hero-sub{font-size:1.05rem;color:#555;line-height:1.7;margin-bottom:28px;max-width:520px}
+  .hero-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px}
+  .stat-chip{background:#fff;border:1.5px solid rgba(124,77,255,.15);border-radius:14px;
+    padding:10px 14px;text-align:center;flex:1;min-width:80px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+  .stat-n{font-family:'Baloo 2',cursive;font-size:1.35rem;font-weight:800;color:var(--purple)}
+  .stat-l{font-size:.62rem;font-weight:700;color:#777;line-height:1.3}
+  .hero-btns{display:flex;flex-wrap:wrap;gap:12px}
+
+  /* monkey gif — decorative, right side on desktop */
+  .monkey-wrap{position:absolute;right:0;top:60px;width:clamp(180px,22vw,320px);
+    pointer-events:none;opacity:.88;z-index:2}
+  .monkey-wrap img{width:100%;height:auto;display:block}
+
+  /* kid running gif — above "Why us" section */
+  .kid-running-wrap{position:absolute;right:clamp(10px,4vw,60px);top:-20px;
+    width:clamp(120px,16vw,200px);pointer-events:none;opacity:.9;z-index:2}
+  .kid-running-wrap img{width:100%;height:auto;display:block}
+
+  /* horse gif — gallery section corner */
+  .horse-wrap{position:absolute;top:16px;right:16px;width:clamp(50px,8vw,100px);
+    pointer-events:none;opacity:.85;z-index:2}
+  .horse-wrap img{width:100%;height:auto;display:block}
+
+  /* ── WHY US ── */
+  .why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:40px}
+  .why-card{background:#fff;border-radius:20px;padding:22px 18px;
+    border:1.5px solid rgba(0,0,0,.05);transition:transform .25s,box-shadow .25s}
+  .why-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,.1)}
+  .why-icon{font-size:2.2rem;margin-bottom:10px}
+  .why-title{font-weight:800;font-size:1rem;color:var(--ink);margin-bottom:5px}
+  .why-desc{font-size:.82rem;color:#777;line-height:1.55}
+
+  /* ── SCHOOL PHOTO strip ── */
+  .photo-strip{border-radius:22px;overflow:hidden;box-shadow:0 14px 44px rgba(0,0,0,.12);
+    border:3px solid #fff;margin-top:40px}
+  .photo-strip img{width:100%;max-height:300px;object-fit:cover;display:block}
+  .photo-caption{background:#fff;padding:12px 18px;font-weight:700;font-size:.9rem;color:var(--ink);text-align:center}
+
+  /* ── PRINCIPAL ── */
+  .principal-card{background:#fff;border-radius:24px;padding:28px 24px;
+    border-left:4px solid var(--pink);box-shadow:0 8px 32px rgba(0,0,0,.07);margin-bottom:28px}
+  .principal-row{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+  .principal-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;
+    border:3px solid var(--pink);flex-shrink:0}
+  .principal-photo-fallback{width:80px;height:80px;border-radius:50%;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;
+    border:3px solid var(--pink)}
+  .principal-quote{font-size:1.05rem;color:#444;line-height:1.72;font-style:italic}
+  .principal-by{font-weight:800;font-size:.9rem;color:var(--ink);margin-top:12px}
+
+  /* about stats */
+  .about-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .about-stat{background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:18px;
+    padding:22px 16px;text-align:center;color:#fff}
+  .about-stat-n{font-family:'Baloo 2',cursive;font-size:2rem;font-weight:800}
+  .about-stat-l{font-size:.72rem;font-weight:700;opacity:.88}
+
+  /* ── GALLERY ── */
+  .gal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:36px}
+  .gal-card{border-radius:18px;overflow:hidden;aspect-ratio:1;cursor:pointer;
+    transition:transform .25s,box-shadow .25s;position:relative}
+  .gal-card:hover{transform:scale(1.04);box-shadow:0 12px 36px rgba(0,0,0,.15)}
+  .gal-card img{width:100%;height:100%;object-fit:cover;display:block}
+  .gal-overlay{position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(transparent,rgba(0,0,0,.62));
+    padding:24px 12px 12px;color:#fff;text-align:center}
+  .gal-overlay-title{font-weight:800;font-size:.88rem}
+  .gal-overlay-desc{font-size:.72rem;opacity:.85}
+
+  /* lightbox */
+  .lb-overlay{position:fixed;inset:0;z-index:1200;background:rgba(10,10,26,.88);
+    display:flex;align-items:center;justify-content:center;padding:16px;
+    animation:fadeIn .2s ease}
+  .lb-img{max-width:min(96vw,820px);max-height:88vh;border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,.5);object-fit:contain}
+  .lb-close{position:absolute;top:16px;right:16px;width:42px;height:42px;
+    border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;
+    font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .lb-btn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;
+    border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.35);
+    color:#fff;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .lb-prev{left:16px}
+  .lb-next{right:16px}
+
+  /* ── ACADEMICS ── */
+  .cls-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+  .cls-chip{background:rgba(255,255,255,.18);border-radius:10px;padding:8px 10px;
+    font-weight:800;font-size:.85rem;text-align:center}
+  .approach-item{background:#fff;border-radius:16px;padding:16px 18px;
+    display:flex;align-items:center;gap:14px;border:1.5px solid rgba(0,0,0,.05);
+    margin-bottom:12px}
+  .approach-icon{font-size:2rem;flex-shrink:0}
+  .approach-title{font-weight:800;font-size:.97rem;color:var(--ink)}
+  .approach-desc{font-size:.8rem;color:#777;margin-top:2px}
+
+  /* ── SAFETY ── */
+  .safety-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:36px}
+  .safety-card{border-radius:18px;padding:22px 14px;text-align:center;
+    border:1.5px solid rgba(0,0,0,.05)}
+  .safety-icon{font-size:2.4rem;margin-bottom:8px}
+  .safety-title{font-weight:800;font-size:.9rem;color:var(--ink)}
+
+  /* ── TESTIMONIALS ── */
+  .testi-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:36px}
+  .testi-card{border-radius:20px;padding:22px 18px;border:1.5px solid rgba(0,0,0,.05)}
+  .testi-stars{display:flex;gap:2px;margin-bottom:10px}
+  .testi-quote{font-size:.9rem;color:#444;line-height:1.65;font-style:italic;margin-bottom:12px}
+  .testi-name{font-weight:800;font-size:.9rem;color:var(--ink)}
+
+  /* ── ADMISSION ── */
+  .steps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:36px}
+  .step-card{background:#fff;border-radius:20px;padding:24px 16px;text-align:center;
+    border:1.5px solid rgba(0,0,0,.05)}
+  .step-n{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-weight:900;font-size:1.1rem;color:#fff;margin:0 auto 12px}
+  .step-icon{font-size:2.2rem;margin-bottom:10px}
+  .step-title{font-weight:800;font-size:.95rem;color:var(--ink)}
+  .step-desc{font-size:.78rem;color:#777;margin-top:5px;line-height:1.5}
+
+  /* ── CTA BAND ── */
+  .cta-band{background:linear-gradient(135deg,#FF6B9D 0%,#7C4DFF 100%);border-radius:28px;
+    padding:44px 28px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .cta-band h2{font-family:'Baloo 2',cursive;font-size:clamp(1.6rem,4vw,2.4rem);margin-bottom:14px}
+  .cta-band p{font-size:1rem;opacity:.9;margin-bottom:28px}
+  .cta-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+
+  /* ── FORM ── */
+  .form-wrap{background:#fff;border-radius:24px;padding:32px 24px;margin-top:32px;
+    box-shadow:0 12px 40px rgba(0,0,0,.08);border:1.5px solid rgba(124,77,255,.1)}
+  .form-input{width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid rgba(0,0,0,.1);
+    font-size:.97rem;outline:none;font-family:'Nunito',sans-serif;margin-bottom:14px;
+    background:#fafaf8;transition:border-color .2s}
+  .form-input:focus{border-color:var(--purple)}
+
+  /* ── MAP ── */
+  .map-wrap{border-radius:22px;overflow:hidden;margin-top:32px;
+    border:1.5px solid rgba(0,0,0,.08);box-shadow:0 8px 28px rgba(0,0,0,.08)}
+
+  /* ── FAQ ── */
+  .faq-item{background:#fff;border-radius:16px;margin-bottom:12px;overflow:hidden;
+    box-shadow:0 3px 14px rgba(0,0,0,.06)}
+  .faq-q{width:100%;padding:18px 20px;background:none;border:none;text-align:left;
+    font-weight:800;font-size:.97rem;color:var(--ink);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:'Nunito',sans-serif}
+  .faq-a{padding:0 20px 16px;color:#666;font-size:.9rem;line-height:1.65}
+  .faq-chev{font-size:1.2rem;transition:transform .25s;flex-shrink:0}
+  .faq-chev.open{transform:rotate(180deg)}
+
+  /* ── QUIZ MODAL ── */
+  .modal-ov{position:fixed;inset:0;z-index:1100;background:rgba(26,26,46,.5);
+    backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+    padding:16px;animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{width:min(100%,400px);background:#fff;border-radius:24px;padding:28px 22px 32px;
+    position:relative;box-shadow:0 24px 64px rgba(0,0,0,.2);max-height:92vh;overflow-y:auto}
+  .modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;
+    background:rgba(0,0,0,.07);border:none;cursor:pointer;font-size:1.1rem;
+    display:flex;align-items:center;justify-content:center}
+  .quiz-prog{display:flex;gap:6px;margin-bottom:20px}
+  .quiz-dot{flex:1;height:4px;border-radius:4px;background:rgba(124,77,255,.15);transition:background .3s}
+  .quiz-dot.done{background:var(--purple)}
+  .quiz-opt{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;
+    border-radius:14px;border:2px solid rgba(0,0,0,.08);background:#fff;
+    font-size:.97rem;font-weight:700;color:var(--ink);cursor:pointer;text-align:left;
+    transition:all .15s;font-family:'Nunito',sans-serif;margin-bottom:10px}
+  .quiz-opt:hover{border-color:var(--purple);background:rgba(124,77,255,.06)}
+  .quiz-opt-em{font-size:1.6rem}
+
+  /* ── STICKY BAR ── */
+  .sticky-bar{position:fixed;bottom:0;left:0;right:0;z-index:800;background:#fff;
+    border-top:1.5px solid rgba(124,77,255,.15);padding:10px 16px;
+    display:flex;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,.08)}
+  .sticky-bar a,.sticky-bar button{flex:1;display:flex;align-items:center;justify-content:center;
+    padding:12px 8px;border-radius:14px;font-weight:800;font-size:.82rem;
+    text-decoration:none;gap:5px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;
+    transition:transform .15s}
+  .sticky-bar a:hover,.sticky-bar button:hover{transform:scale(1.03)}
+  .sb-call{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff!important}
+  .sb-wa{background:#25D366;color:#fff!important}
+  .sb-enq{border:2px solid rgba(124,77,255,.35)!important;color:var(--purple)!important;background:transparent!important}
+
+  /* ── PAGE HERO (sub-pages) ── */
+  .page-hero{padding:100px 20px 60px;background:linear-gradient(160deg,#fff5fb,#f0f4ff);text-align:center}
+  .page-hero h1{font-family:'Baloo 2',cursive;font-size:clamp(1.8rem,5vw,2.8rem);color:var(--ink);margin-bottom:12px}
+  .page-hero p{color:#666;font-size:1rem;max-width:520px;margin:0 auto}
+  .breadcrumb{background:rgba(124,77,255,.07);padding:10px 20px;
+    border-bottom:1.5px solid rgba(124,77,255,.12)}
+  .breadcrumb-inner{max-width:1100px;margin:0 auto;font-size:.82rem;font-weight:700;color:var(--purple)}
+  .breadcrumb button{color:var(--purple);background:none;border:none;cursor:pointer;
+    font-weight:700;font-size:.82rem;font-family:'Nunito',sans-serif}
+
+  /* notice board */
+  .notice-card{background:#fff;border-radius:16px;padding:20px 22px;margin-bottom:14px;
+    box-shadow:0 3px 14px rgba(0,0,0,.06);border-left:4px solid transparent}
+  .notice-card.imp{border-left-color:var(--orange)}
+  .notice-head{display:flex;justify-content:space-between;align-items:flex-start;
+    gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .notice-title{font-weight:800;font-size:1rem;color:var(--ink)}
+  .notice-date{font-size:.73rem;color:#888;white-space:nowrap;padding-top:2px}
+  .notice-body{font-size:.87rem;color:#555;line-height:1.65}
+  .cat-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:14px;
+    font-size:.7rem;font-weight:800;margin-bottom:6px}
+  .imp-badge{background:#FFF3E0;color:#a84e00;border:1.5px solid var(--orange);
+    font-size:.7rem;font-weight:800;padding:2px 9px;border-radius:12px;
+    display:inline-flex;align-items:center;gap:4px;margin-left:8px}
+  .cat-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+  .cat-filter{padding:6px 14px;border-radius:20px;border:2px solid rgba(124,77,255,.2);
+    background:#fff;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;
+    cursor:pointer;color:#666;transition:all .18s}
+  .cat-filter:hover,.cat-filter.active{background:var(--purple);border-color:var(--purple);color:#fff}
+
+  /* mandatory disclosure */
+  .disc-section{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:16px;
+    box-shadow:0 3px 14px rgba(0,0,0,.06)}
+  .disc-section-head{padding:16px 20px;background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:#fff;font-weight:800;font-size:.97rem}
+  .disc-table{width:100%;border-collapse:collapse}
+  .disc-table td{padding:10px 20px;font-size:.88rem;border-bottom:1px solid #f0f0f0}
+  .disc-table td:first-child{font-weight:700;color:#555;width:45%}
+  .disc-table td:last-child{color:var(--ink)}
+  .disc-table tr:last-child td{border-bottom:none}
+
+  /* ── FOOTER ── */
+  .footer{background:var(--ink);color:#ccc;padding:52px 20px 100px}
+  .footer h3{font-family:'Baloo 2',cursive;color:#fff;margin-bottom:12px;font-size:1.05rem}
+  .footer p,.footer a{font-size:.88rem;color:#aaa;line-height:1.8;text-decoration:none}
+  .footer a:hover{color:var(--pink)}
+  .footer-grid{display:grid;grid-template-columns:1fr;gap:32px;max-width:1100px;margin:0 auto}
+  .footer-bottom{text-align:center;margin-top:36px;padding-top:20px;
+    border-top:1px solid rgba(255,255,255,.08);font-size:.8rem;color:#555}
+
+  /* ── RESPONSIVE ── */
+  @media(min-width:640px){
+    .why-grid{grid-template-columns:repeat(3,1fr)}
+    .gal-grid{grid-template-columns:repeat(3,1fr)}
+    .about-stats{grid-template-columns:repeat(4,1fr)}
+    .steps-grid{grid-template-columns:repeat(4,1fr)}
+    .safety-grid{grid-template-columns:repeat(3,1fr)}
+    .testi-grid{grid-template-columns:repeat(2,1fr)}
+    .footer-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(min-width:768px){
+    .hamburger{display:none!important}
+    .nav-links{display:flex!important}
+    .drawer{display:none!important}
+    .hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+    .monkey-wrap{display:block}
+    .principal-inner{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+    .academics-inner{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+    .testi-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:767px){
+    .nav-links{display:none}
+    .hamburger{display:flex!important}
+    .monkey-wrap{width:clamp(140px,38vw,200px);top:72px}
+    .kid-running-wrap{width:clamp(90px,24vw,140px)}
+    .hero-photo-half{display:none}
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TINY HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+const CAT_STYLE = {
+  Admission:{ bg:"#E4F8FD", color:"#1A5E7A" },
+  Exam:     { bg:"#FFF0F5", color:"#9B1A5A" },
+  Holiday:  { bg:"#FFFBEA", color:"#7a5800" },
+  Event:    { bg:"#E8FBF5", color:"#1a6e54" },
+  General:  { bg:"#F0EEFF", color:"#4A1A8A" },
+  Fee:      { bg:"#FFF3E0", color:"#a84e00" },
+};
+
+type NoticeCategory = keyof typeof CAT_STYLE;
+
+function FAQ({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="faq-item">
+      <button className="faq-q" onClick={() => setOpen(o => !o)}>
+        <span>{q}</span>
+        <span className={`faq-chev${open?" open":""}`}>⌄</span>
+      </button>
+      {open && <div className="faq-a">{a}</div>}
+    </div>
+  );
 }
 
-export default function NandiniKidsAcademy() {
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [backgroundMusicStarted, setBackgroundMusicStarted] = useState(false);
-  const [formData, setFormData] = useState({
-    parentName: '',
-    phoneNumber: '',
-    childClass: ''
-  });
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxSrc, setLightboxSrc] = useState("");
-  const [lightboxAlt, setLightboxAlt] = useState("");
-  const [childGameOpen, setChildGameOpen] = useState(false);
-  const [childGamePhase, setChildGamePhase] = useState<"intro" | "questions" | "result">("intro");
-  const [childGamePicks, setChildGamePicks] = useState<ChildGameTrait[]>([]);
-  const [childGameResultKey, setChildGameResultKey] = useState<ChildGameTrait | null>(null);
-
-  // Encoded URLs — spaces in filenames break requests unless encoded
-  const BG_MUSIC_SRC = "/music/backgound%20music.mp3";
-  const BELL_CTA_SRC = "/music/bellsound%20scroll.mp3";
-
-  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
-  const soundEnabledRef = useRef(soundEnabled);
-  const bgMusicStartedRef = useRef(false);
-
-  soundEnabledRef.current = soundEnabled;
-
-  /** Bell MP3 on CTA clicks only (not on scroll). */
-  const playCtaBell = useCallback(() => {
-    if (!soundEnabledRef.current) return;
-    const a = new Audio(BELL_CTA_SRC);
-    a.volume = 0.55;
-    a.play().catch(() => {});
-  }, []);
-
-  const openChildGame = useCallback(() => {
-    setChildGameOpen(true);
-    setChildGamePhase("intro");
-    setChildGamePicks([]);
-    setChildGameResultKey(null);
-    playCtaBell();
-  }, [playCtaBell]);
-
-  const closeChildGame = useCallback(() => {
-    setChildGameOpen(false);
-  }, []);
-
-  const startChildGameQuiz = useCallback(() => {
-    setChildGamePhase("questions");
-    setChildGamePicks([]);
-    setChildGameResultKey(null);
-    playCtaBell();
-  }, [playCtaBell]);
-
-  const pickChildGameAnswer = useCallback(
-    (trait: ChildGameTrait) => {
-      playCtaBell();
-      setChildGamePicks((prev) => {
-        const next = [...prev, trait];
-        if (next.length >= CHILD_GAME_QUESTIONS.length) {
-          setChildGameResultKey(computeChildGameResult(next));
-          setChildGamePhase("result");
-        }
-        return next;
-      });
-    },
-    [playCtaBell]
-  );
-
-  const scrollToSectionThenCloseGame = useCallback(
-    (sectionId: string) => {
-      setChildGameOpen(false);
-      playCtaBell();
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          document
-            .getElementById(sectionId)
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 80);
-      });
-    },
-    [playCtaBell]
-  );
-
-  const playCtaBellRef = useRef(playCtaBell);
-  playCtaBellRef.current = playCtaBell;
-
-  // Create background music once; loop until muted via icon
-  useEffect(() => {
-    const bg = new Audio(BG_MUSIC_SRC);
-    bg.loop = true;
-    bg.preload = "auto";
-    bg.volume = 0.35;
-    backgroundMusicRef.current = bg;
-
-    return () => {
-      bg.pause();
-      backgroundMusicRef.current = null;
-    };
-  }, []);
-
-  // Mute / unmute: only touch background after user has started it once
-  useEffect(() => {
-    const bg = backgroundMusicRef.current;
-    if (!bg || !bgMusicStartedRef.current) return;
-    if (soundEnabled) {
-      bg.play().catch(() => {});
-    } else {
-      bg.pause();
-    }
-  }, [soundEnabled]);
-
-  // Enhanced Sound functions using Web Audio API
-  const playSound = (type: string) => {
-    if (!soundEnabled) return;
-    
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    switch(type) {
-      case 'cheer':
-        // Happy cheer sound for form submission
-        oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1);
-        oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-        break;
-      case 'owl':
-        // Owl hoot sound
-        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(150, audioContext.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-        break;
-      case 'chirp':
-        // Parrot chirp sound
-        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(1500, audioContext.currentTime + 0.1);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
-        break;
-      case 'welcome':
-        // Welcome jingle when page loads
-        const frequencies = [523, 659, 784, 1047]; // C-E-G-C chord
-        frequencies.forEach((freq, index) => {
-          const osc = audioContext.createOscillator();
-          const gain = audioContext.createGain();
-          osc.connect(gain);
-          gain.connect(audioContext.destination);
-          osc.frequency.setValueAtTime(freq, audioContext.currentTime + index * 0.1);
-          gain.gain.setValueAtTime(0.1, audioContext.currentTime + index * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + index * 0.1 + 0.5);
-          osc.start(audioContext.currentTime + index * 0.1);
-          osc.stop(audioContext.currentTime + index * 0.1 + 0.5);
-        });
-        break;
-      case 'giggle':
-        // Kids giggle sound
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.05);
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime + 0.1);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.15);
-        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-        break;
-    }
+function Quiz({ onClose, goTo }: { onClose: () => void; goTo: (id: string) => void }) {
+  const [phase, setPhase] = useState("intro");
+  const [picks, setPicks] = useState<QuizTrait[]>([]);
+  const qi = picks.length;
+  const result = phase==="result" ? (() => {
+    const c: Record<QuizTrait, number> = { creative:0, analytical:0, communicator:0, builder:0 };
+    picks.forEach(t=>c[t]++);
+    return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0] as QuizTrait;
+  })() : null;
+  const pick = (trait: QuizTrait) => {
+    const next=[...picks,trait];
+    setPicks(next);
+    if(next.length>=QUIZ_Q.length) setPhase("result");
   };
-
-  // Play welcome jingle when page loads
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (soundEnabled) {
-        playSound('welcome');
-      }
-    }, 1000); // Play after 1 second
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const onAnchorClick = (e: Event) => {
-      const a = e.currentTarget as HTMLAnchorElement;
-      const href = a.getAttribute("href");
-      if (!href || !href.startsWith("#")) return;
-      const target = document.querySelector(href);
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        playCtaBellRef.current();
-      }
-    };
-
-    const anchors = document.querySelectorAll<HTMLAnchorElement>(
-      'a[href^="#"]:not(.nk-link):not(.nk-cta):not(.nk-mobile-link):not(.nk-mobile-cta)'
-    );
-    anchors.forEach((el) => el.addEventListener("click", onAnchorClick));
-
-    const onScrollStartBg = () => {
-      if (bgMusicStartedRef.current || !soundEnabledRef.current) return;
-      const bg = backgroundMusicRef.current;
-      if (!bg) return;
-      bgMusicStartedRef.current = true;
-      setBackgroundMusicStarted(true);
-      bg.play().catch(() => {});
-    };
-
-    window.addEventListener("scroll", onScrollStartBg, { passive: true });
-    window.addEventListener("wheel", onScrollStartBg, { passive: true });
-    window.addEventListener("touchmove", onScrollStartBg, { passive: true });
-
-    const reveals = document.querySelectorAll(".reveal");
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add("visible");
-      }),
-      { threshold: 0.1 }
-    );
-    reveals.forEach((r) => obs.observe(r));
-
-    return () => {
-      anchors.forEach((el) => el.removeEventListener("click", onAnchorClick));
-      obs.disconnect();
-      window.removeEventListener("scroll", onScrollStartBg);
-      window.removeEventListener("wheel", onScrollStartBg);
-      window.removeEventListener("touchmove", onScrollStartBg);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightboxOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen]);
-
-  useEffect(() => {
-    if (!childGameOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [childGameOpen]);
-
-  useEffect(() => {
-    if (!childGameOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setChildGameOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [childGameOpen]);
-
   return (
+    <div className="modal-ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>×</button>
+        {phase==="intro"&&(
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"3rem",marginBottom:12}}>🎯</div>
+            <h2 className="brand" style={{fontSize:"1.4rem",color:"var(--ink)",marginBottom:10}}>Know Your Child's Strength</h2>
+            <p style={{color:"#777",fontSize:".93rem",lineHeight:1.6,marginBottom:24}}>3 quick questions — see how Nandini Kids nurtures your child's unique talent!</p>
+            <button className="btn-p" style={{width:"100%"}} onClick={()=>setPhase("quiz")}>Start the Quiz →</button>
+          </div>
+        )}
+        {phase==="quiz"&&(
+          <>
+            <div className="quiz-prog">{QUIZ_Q.map((_,i)=><div key={i} className={`quiz-dot${i<qi?" done":""}`}/>)}</div>
+            <p style={{fontSize:".72rem",fontWeight:800,color:"var(--purple)",letterSpacing:".06em",marginBottom:8}}>QUESTION {qi+1} OF {QUIZ_Q.length}</p>
+            <h3 className="brand" style={{fontSize:"1.2rem",color:"var(--ink)",marginBottom:18}}>{QUIZ_Q[qi].prompt}</h3>
+            {QUIZ_Q[qi].opts.map(opt=>(
+              <button key={opt.label} className="quiz-opt" onClick={()=>pick(opt.trait as QuizTrait)}>
+                <span className="quiz-opt-em">{opt.emoji}</span><span>{opt.label}</span>
+              </button>
+            ))}
+          </>
+        )}
+        {phase==="result"&&result&&(
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"3.5rem",marginBottom:10}}>{QUIZ_RESULTS[result].emoji}</div>
+            <h3 className="brand" style={{fontSize:"1.35rem",color:"var(--ink)",marginBottom:10}}>{QUIZ_RESULTS[result].title}</h3>
+            <p style={{fontSize:".92rem",color:"#555",lineHeight:1.65,marginBottom:22}}>{QUIZ_RESULTS[result].blurb}</p>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <button className="btn-p" style={{width:"100%"}} onClick={()=>{onClose();goTo("gallery")}}>👉 See how we build this skill</button>
+              <button className="btn-g" style={{width:"100%"}} onClick={()=>{onClose();goTo("admission")}}>👉 Book a free school visit</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EnquiryForm() {
+  const [form,setForm]=useState({name:"",phone:"",cls:""});
+  const [sent,setSent]=useState(false);
+  const set = (k: "name" | "phone" | "cls") => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+  if(sent) return(
+    <div style={{textAlign:"center",padding:"24px 0"}}>
+      <div style={{fontSize:"3rem",marginBottom:10}}>🎉</div>
+      <h3 className="brand" style={{color:"var(--purple)",marginBottom:8}}>Thank you, {form.name||"Dear Parent"}!</h3>
+      <p style={{color:"#666"}}>Hum aapko jald hi call karenge.</p>
+    </div>
+  );
+  return(
+    <form onSubmit={e=>{e.preventDefault();setSent(true)}}>
+      <input className="form-input" type="text" placeholder="Parent Name *" required value={form.name} onChange={set("name")}/>
+      <input className="form-input" type="tel" placeholder="Phone Number *" required value={form.phone} onChange={set("phone")}/>
+      <select className="form-input" value={form.cls} onChange={set("cls")}>
+        <option value="">Select Class</option>
+        {["Nursery","LKG","UKG","Class 1","Class 2","Class 3","Class 4","Class 5"].map(c=><option key={c}>{c}</option>)}
+      </select>
+      <button type="submit" className="btn-p" style={{width:"100%",textAlign:"center"}}>Submit & Get Call Back 🎉</button>
+    </form>
+  );
+}
+
+// Gallery lightbox viewer
+function GalleryLightbox({
+  album, index, onClose, onPrev, onNext,
+}: {
+  album: GalleryAlbum;
+  index: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const src = lp(album.images[index]);
+  return (
+    <div className="lb-overlay" onClick={onClose}>
+      <button className="lb-close" onClick={onClose}>×</button>
+      {album.images.length>1&&<button className="lb-btn lb-prev" onClick={e=>{e.stopPropagation();onPrev()}}>‹</button>}
+      <img className="lb-img" src={src} alt={`${album.title} ${index+1}`} onClick={e=>e.stopPropagation()}/>
+      {album.images.length>1&&<button className="lb-btn lb-next" onClick={e=>{e.stopPropagation();onNext()}}>›</button>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV (shared)
+// ─────────────────────────────────────────────────────────────────────────────
+function Nav({ page, setPage, scrollTo }: { page: PageId; setPage: SetPage; scrollTo: (id: string) => void }) {
+  const [scrolled,setScrolled]=useState(false);
+  const [menu,setMenu]=useState(false);
+  useEffect(()=>{
+    const fn=()=>setScrolled(window.scrollY>10);
+    window.addEventListener("scroll",fn,{passive:true});
+    return()=>window.removeEventListener("scroll",fn);
+  },[]);
+  useEffect(()=>setMenu(false),[page]);
+  const go = (id: string) => { setPage("home"); setMenu(false); requestAnimationFrame(() => setTimeout(() => scrollTo(id), 80)); };
+  const NAV=[
+    {label:"About",    action:()=>go("about")},
+    {label:"Gallery",  action:()=>setPage("gallery")},
+    {label:"Academics",action:()=>go("academics")},
+    {label:"Safety",   action:()=>go("safety")},
+    {label:"Notices",  action:()=>setPage("notices")},
+    {label:"Disclosure",action:()=>setPage("disclosure")},
+    {label:"Contact",  action:()=>go("contact")},
+  ];
+  return(
     <>
-      <Head>
-        <title>Nandini Kids 'N' Academy – Dalmiyanagar, Rohtas, Bihar | Best English Medium School</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Best English medium school in Dalmiyanagar, Rohtas, Bihar. Safe, caring environment for Nursery to Class 5. Admissions Open!" />
-        <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      </Head>
+      <nav className={`nav${scrolled?" scrolled":""}`}>
+        <div className="nav-inner">
+          <button className="nav-logo" onClick={()=>setPage("home")}>
+            <div className="nav-logo-ring" style={{ padding: 0, overflow: "hidden", background: "#fff" }}>
+              <img src={lp(SITE_LOGO_FILE)} alt="Nandini Kids 'N' Academy" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+            <div>
+              <div className="nav-logo-name">Nandini Kids 'N' Academy</div>
+              <div className="nav-logo-sub">Dalmiyanagar, Rohtas, Bihar · Est. 2019</div>
+            </div>
+          </button>
+          <div className="nav-links">
+            {NAV.map(n=><button key={n.label} className={`nav-link${page===n.label.toLowerCase()?" active":""}`} onClick={n.action}>{n.label}</button>)}
+            <button className="nav-cta" onClick={()=>go("admission")}>Admission →</button>
+          </div>
+          <button className={`hamburger${menu?" open":""}`} onClick={()=>setMenu(o=>!o)} aria-label="Menu">
+            <span/><span/><span/>
+          </button>
+        </div>
+      </nav>
+      <div className={`drawer${menu?" open":""}`}>
+        {NAV.map(n=><button key={n.label} className="drawer-link" onClick={n.action}>{n.label}</button>)}
+        <button className="drawer-link" style={{color:"var(--purple)",fontWeight:900}} onClick={()=>go("admission")}>🎒 Admission</button>
+      </div>
+      {menu&&<div onClick={()=>setMenu(false)} style={{position:"fixed",inset:0,zIndex:888,background:"rgba(0,0,0,.2)"}}/>}
+    </>
+  );
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOTER (shared)
+// ─────────────────────────────────────────────────────────────────────────────
+function Footer({ setPage, scrollTo }: { setPage: SetPage; scrollTo: (id: string) => void }) {
+  const go = (id: string) => { setPage("home"); requestAnimationFrame(() => setTimeout(() => scrollTo(id), 80)); };
+  return(
+    <footer className="footer">
+      <div className="footer-grid">
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, overflow: "hidden", background: "#fff", flexShrink: 0 }}>
+              <img src={lp(SITE_LOGO_FILE)} alt="" width={44} height={44} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+            <div>
+              <div style={{fontFamily:"'Baloo 2',cursive",color:"#fff",fontWeight:800}}>Nandini Kids 'N' Academy</div>
+              <div style={{fontSize:".6rem",color:"#777"}}>Dalmiyanagar, Rohtas, Bihar · Est. 2019</div>
+            </div>
+          </div>
+          <p>"Every child is special. Every child is a star!" ✨</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:14}}>
+            {["Since 2019","1000+ Students","100% Safe","20+ Teachers"].map(b=>(
+              <span key={b} style={{background:"rgba(255,255,255,.1)",color:"#ccc",padding:"4px 10px",borderRadius:50,fontSize:".68rem",fontWeight:700}}>{b}</span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3>Quick Links</h3>
+          {[["About Us","about"],["Gallery","gallery"],["Admission","admission"],["Notices","notices"],["Disclosure","disclosure"],["Contact","contact"]].map(([l,id])=>(
+            <button key={l} onClick={()=>["gallery","notices","disclosure"].includes(id)?setPage(id as PageId):go(id)}
+              style={{display:"block",background:"none",border:"none",cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontSize:".88rem",color:"#aaa",lineHeight:1.8,textAlign:"left",padding:0}}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <p>📍 Dalmiyanagar, Rohtas, Bihar</p>
+          <p>📞 <a href={TEL}>{PHONE_DISP}</a></p>
+          <p>🎓 Nursery to Class 5 · English Medium</p>
+          <a href={WA_DEFAULT} className="btn-wa" style={{marginTop:14,padding:"10px 20px",fontSize:".85rem",display:"inline-block"}}>💬 WhatsApp Us</a>
+        </div>
+      </div>
+      <div className="footer-bottom">© 2026 Nandini Kids 'N' Academy · Made with 💜 for little stars</div>
+    </footer>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOME PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function HomePage({ setPage, scrollTo, openQuiz }: { setPage: SetPage; scrollTo: (id: string) => void; openQuiz: () => void }) {
+  const [lb, setLb] = useState<LightboxState | null>(null);
+  const openAlbum = (album: GalleryAlbum) => setLb({ album, index: 0 });
+  const lbPrev = () => setLb(s => s ? { ...s, index: (s.index - 1 + s.album.images.length) % s.album.images.length } : s);
+  const lbNext = () => setLb(s => s ? { ...s, index: (s.index + 1) % s.album.images.length } : s);
+
+  return(
+    <>
+      {/* ── HERO ── */}
+      <section id="hero" className="hero" style={{position:"relative",overflow:"hidden"}}>
+        {/* Colour blobs */}
+        <div className="blob" style={{background:"var(--pink)",width:380,height:380,top:-100,left:-100}}/>
+        <div className="blob" style={{background:"var(--purple)",width:280,height:280,top:"30%",right:-80}}/>
+        <div className="blob" style={{background:"var(--teal)",width:220,height:220,bottom:-60,left:"35%"}}/>
+
+        {/* Monkey GIF — swings on the right, half-peeking from edge */}
+        <div className="monkey-wrap" style={{position:"absolute",right:0,top:20,width:"clamp(160px,20vw,300px)",pointerEvents:"none",opacity:.88,zIndex:2}}>
+          <img src={lp(MONKEY_GIF)} alt="" aria-hidden style={{width:"100%",height:"auto",display:"block"}}/>
+        </div>
+
+        <div className="inner rel" style={{width:"100%"}}>
+          <div className="hero-inner">
+            <div>
+              <div className="hero-tag">🏫 Dalmiyanagar's Most Trusted School</div>
+              <h1 className="hero-h1">
+                Where Every Child<br/>is a <span className="grad">Star ✨</span>
+              </h1>
+              <p className="hero-sub">English medium school from Nursery to Class 5 — safe, caring, and designed to make your child <strong>love learning</strong>. <em>Admissions Open!</em></p>
+              <div className="hero-stats">
+                {[{n:"1000+",l:"Happy Students"},{n:"15+",l:"Years Experience"},{n:"100%",l:"Parent Trust"},{n:"20+",l:"Expert Teachers"}].map(s=>(
+                  <div key={s.l} className="stat-chip"><div className="stat-n">{s.n}</div><div className="stat-l">{s.l}</div></div>
+                ))}
+              </div>
+              <div className="hero-btns">
+                <button className="btn-p" onClick={()=>scrollTo("admission")}>Book a School Visit</button>
+                <a href={TEL} className="btn-g">📞Call Now</a>
+                <button className="btn-game" onClick={openQuiz}>Know Your Child's Talent</button>
+              </div>
+            </div>
+            {/* School photo on desktop right column */}
+            <div className="hero-photo-half" style={{borderRadius:24,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.14)",border:"3px solid #fff"}}>
+              <img src={lp(SCHOOL_PHOTO)} alt="Nandini Kids Academy campus" style={{width:"100%",height:320,objectFit:"cover",display:"block"}}
+                onError={e=>{e.currentTarget.style.display="none"}}/>
+            </div>
+          </div>
+          {/* School photo below on mobile */}
+          <div style={{marginTop:32,borderRadius:22,overflow:"hidden",boxShadow:"0 14px 44px rgba(0,0,0,.12)",border:"3px solid #fff",display:"block"}} className="hero-photo-half-mob">
+            <img src={lp(SCHOOL_PHOTO)} alt="Nandini Kids Academy" style={{width:"100%",maxHeight:240,objectFit:"cover",display:"block"}}
+              onError={e=>{e.currentTarget.parentElement!.style.display="none"}}/>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY US ── */}
+      <section id="why" className="sec" style={{background:"#fff",position:"relative",overflow:"hidden"}}>
+        {/* Kid running GIF — runs into the section from right, above the heading */}
+        <div className="kid-running-wrap">
+          <img src={lp(KID_RUNNING_GIF)} alt="" aria-hidden style={{width:"100%",height:"auto",display:"block"}}/>
+        </div>
+        <div className="inner rel">
+          <div className="sec-tag">👩‍🏫 Why Parents Choose Us</div>
+          <h2 className="sec-h2">School jahan bache khud<br/>daur ke aana chahe! 🎉</h2>
+          <p className="sec-p">From safety to spoken English — we've thought of everything so you don't have to.</p>
+          <div className="why-grid">
+            {[
+              {icon:"👩‍🏫",title:"Caring Teachers",    desc:"20+ dedicated teachers jo bachon ko samjhate hain pyaar se",     color:"#FFE0F7"},
+              {icon:"🛡️", title:"CCTV 24/7 Security", desc:"Full campus surveillance — every corner is watched",              color:"#E0F4FF"},
+              {icon:"🚌", title:"Safe Transport",      desc:"Door-to-door GPS-tracked pickup & drop",                          color:"#FFF3E0"},
+              {icon:"🗣️", title:"Spoken English",      desc:"Confident communication — har baccha bolega fluently",            color:"#E8F5E9"},
+              {icon:"🎨", title:"Activity Learning",   desc:"Khel khel mein sikhaate hain — padhai bojh nahi, khel hai!",     color:"#F3E5F5"},
+              {icon:"💧", title:"Hygiene & Safety",    desc:"RO water, clean separate toilets, female staff for small kids",  color:"#E0F7FA"},
+            ].map(f=>(
+              <div key={f.title} className="why-card" style={{background:f.color}}>
+                <div className="why-icon">{f.icon}</div>
+                <div className="why-title">{f.title}</div>
+                <div className="why-desc">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT (Principal + Teachers) ── */}
+      <section id="about" className="sec" style={{background:"linear-gradient(160deg,#fff5fb,#f4f0ff)"}}>
+        <div className="blob" style={{background:"var(--pink)",width:300,height:300,top:-80,right:-60}}/>
+        <div className="inner rel">
+          <div className="sec-tag">🏫 About the School</div>
+          <h2 className="sec-h2">Every child is special.<br/>Every child is a star. 🌟</h2>
+          <div className="principal-inner" style={{marginTop:36}}>
+            <div>
+              {/* Principal quote card */}
+              <div className="principal-card">
+                <div className="principal-row">
+                  <img className="principal-photo" src={lp(PRINCIPAL_FILE)} alt="Principal, Nandini Kids Academy"
+                    onError={e=>{
+                      const img = e.currentTarget;
+                      img.style.display = "none";
+                      const next = img.nextElementSibling as HTMLElement | null;
+                      if (next) next.style.display = "flex";
+                    }}/>
+                  <div className="principal-photo-fallback" style={{display:"none"}}>👩‍💼</div>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:"1.05rem",color:"var(--ink)"}}>Principal & Director</div>
+                    <div style={{fontSize:".82rem",color:"#888"}}>Nandini Kids 'N' Academy</div>
+                  </div>
+                </div>
+                <p className="principal-quote">
+                  "We don't just teach — we install values in children. Here, every child is special, every child is a star. Along with quality education and meaningful academic outcomes, we also teach Indian values."
+                </p>
+                <div className="principal-by">— Principal & Director, Nandini Kids Academy</div>
+              </div>
+              {/* Teacher group photo */}
+              <div className="photo-strip">
+                <img src={lp(TEACHERS_PHOTO)} alt="Nandini Kids Academy teachers and staff"
+                  style={{width:"100%",maxHeight:220,objectFit:"cover",display:"block"}}
+                  onError={e=>{e.currentTarget.parentElement!.style.display="none"}}/>
+                <div className="photo-caption">Hamari dedicated teacher community — bachon ka dusra parivaar 💛</div>
+              </div>
+            </div>
+            <div>
+              <div className="about-stats">
+                {[{n:"Since 2019",l:"Established"},{n:"1000+",l:"Students"},{n:"20+",l:"Teachers"},{n:"100%",l:"Safe Campus"}].map(s=>(
+                  <div key={s.l} className="about-stat"><div className="about-stat-n">{s.n}</div><div className="about-stat-l">{s.l}</div></div>
+                ))}
+              </div>
+              <div style={{marginTop:24,background:"linear-gradient(135deg,var(--yellow),var(--orange))",borderRadius:22,padding:"28px 22px",color:"#1a1a2e"}}>
+                <div style={{fontSize:"3rem",marginBottom:12,textAlign:"center"}} >🎓</div>
+                <h3 className="brand" style={{fontSize:"1.4rem",marginBottom:10,textAlign:"center"}}>Our Achievements</h3>
+                <p style={{fontSize:".95rem",lineHeight:1.7,textAlign:"center",opacity:.88}}>Since 2019, we have successfully transformed thousands of children into confident, successful individuals with strong English and Indian values.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── GALLERY ── */}
+      <section id="gallery" className="sec" style={{background:"#fff",position:"relative",overflow:"hidden"}}>
+        {/* Horse GIF — top right corner of gallery section */}
+        <div className="horse-wrap">
+          <img src={lp(HORSE_GIF)} alt="" aria-hidden style={{width:"100%",height:"auto",display:"block"}}/>
+        </div>
+        <div className="inner rel">
+          <div className="sec-tag">📸 School Life</div>
+          <h2 className="sec-h2">Celebrations & Moments 🎊</h2>
+          <p className="sec-p">Har celebration ke photos — kyunki padhai ke saath khushi bhi zaroori hai!</p>
+          <div className="gal-grid">
+            {GALLERY_ALBUMS.map(a=>(
+              <div key={a.id} className="gal-card" onClick={()=>openAlbum(a)}
+                style={{background:`${a.color}22`}}>
+                <img src={lp(a.images[0])} alt={a.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                  onError={e=>{
+                    e.currentTarget.style.display="none";
+                    e.currentTarget.parentElement!.style.background=`${a.color}33`;
+                    e.currentTarget.parentElement!.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;"><div style="font-size:3rem">${a.emoji}</div><div style="font-weight:800;color:${a.color};font-size:.88rem">${a.title}</div></div>`;
+                  }}/>
+                <div className="gal-overlay">
+                  <div className="gal-overlay-title">{a.title}</div>
+                  <div className="gal-overlay-desc">{a.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:"center",marginTop:28}}>
+            <button className="btn-orange" onClick={()=>setPage("gallery")}>Explore Full Gallery →</button>
+            <p style={{marginTop:12,fontSize:".85rem",color:"#888"}}>Activity-wise albums — har celebration ke saari photos ek jagah</p>
+          </div>
+        </div>
+        {lb&&<GalleryLightbox album={lb.album} index={lb.index} onClose={()=>setLb(null)} onPrev={lbPrev} onNext={lbNext}/>}
+      </section>
+
+      {/* ── ACADEMICS ── */}
+      <section id="academics" className="sec" style={{background:"linear-gradient(160deg,#f0fff4,#f0f4ff)"}}>
+        <div className="inner">
+          <div className="sec-tag">📚 Academics</div>
+          <h2 className="sec-h2">English Medium, Strong Foundation 🎓</h2>
+          <p className="sec-p">Nursery to Class 5 — quality education aur holistic development at every step.</p>
+          <div className="academics-inner" style={{marginTop:36}}>
+            <div style={{background:"linear-gradient(135deg,var(--teal),#006064)",borderRadius:22,padding:"28px 22px",color:"#fff"}}>
+              <h3 className="brand" style={{marginBottom:16,fontSize:"1.3rem"}}>Classes Available</h3>
+              <div className="cls-grid">
+                {["Nursery","LKG","UKG","Class 1","Class 2","Class 3","Class 4","Class 5"].map(c=>(
+                  <div key={c} className="cls-chip">{c}</div>
+                ))}
+              </div>
+            </div>
+            <div>
+              {[
+                {icon:"🎨",title:"Activity-Based Learning",desc:"Khel khel mein — no boring lectures. Fun is the method!",bg:"#FFE4F7"},
+                {icon:"📝",title:"Regular Tests & Feedback", desc:"Monthly progress tracking so parents always know",        bg:"#E4F0FF"},
+                {icon:"👥",title:"Personal Attention",       desc:"Small batches — every child is a star, always!",          bg:"#E8FFE4"},
+                {icon:"💻",title:"Computer Lab",             desc:"Updated computers + CAL software from early classes",     bg:"#FFF3E0"},
+              ].map(t=>(
+                <div key={t.title} className="approach-item" style={{background:t.bg}}>
+                  <div className="approach-icon">{t.icon}</div>
+                  <div>
+                    <div className="approach-title">{t.title}</div>
+                    <div className="approach-desc">{t.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SAFETY / INFRASTRUCTURE ── */}
+      <section id="safety" className="sec" style={{background:"#fff"}}>
+        <div className="inner">
+          {/* Campus photo */}
+          <div className="photo-strip" style={{marginBottom:40}}>
+            <img src={lp(SCHOOL_PHOTO)} alt="Nandini Kids Academy campus and facilities"
+              style={{width:"100%",maxHeight:300,objectFit:"cover",display:"block"}}
+              onError={e=>{e.currentTarget.parentElement!.style.display="none"}}/>
+            <div className="photo-caption">A campus designed with safety, cleanliness, and full of life 🏗️</div>
+          </div>
+          <div className="sec-tag">🛡️ Safety & Facilities</div>
+          <h2 className="sec-h2">Our Facilities — Built for Your Child</h2>
+          <div className="safety-grid">
+            {[
+              {icon:"📹",title:"24/7 CCTV",         desc:"Every corner monitored",      color:"#FFE4E1"},
+              {icon:"👩‍🏫",title:"Female Staff",      desc:"For small kids, always",      color:"#FFE4F7"},
+              {icon:"🚽",title:"Clean Toilets",      desc:"Separate boys & girls",       color:"#E4F0FF"},
+              {icon:"💧",title:"RO Drinking Water",  desc:"Hygienic & safe",             color:"#E4FFF5"},
+              {icon:"🚌",title:"GPS Transport",      desc:"Trained, sincere drivers",    color:"#FFF3E0"},
+              {icon:"🏗️",title:"Secured Walls",      desc:"Strong boundary protection",  color:"#F3E5F5"},
+            ].map(f=>(
+              <div key={f.title} className="safety-card" style={{background:f.color}}>
+                <div className="safety-icon">{f.icon}</div>
+                <div className="safety-title">{f.title}</div>
+                <div style={{fontSize:".78rem",color:"#777",marginTop:4}}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section className="sec" style={{background:"linear-gradient(160deg,#fff5fb,#f4f0ff,#f0fff8)"}}>
+        <div className="blob" style={{background:"var(--teal)",width:250,height:250,bottom:-60,left:-60}}/>
+        <div className="inner rel">
+          <div className="sec-tag">🗣️ Parents Say</div>
+          <h2 className="sec-h2">Real Words from Real Parents ❤️</h2>
+          <div className="testi-grid">
+            {[
+              {name:"Sunita Devi",  stars:5, quote:"Mere bacche ki padhai 6 mahine mein bahut improve hui. Teacher bahut caring hain aur daily update dete hain.",             color:"#FFE4F7"},
+              {name:"Rajesh Kumar", stars:5, quote:"Transport facility bahut achhi hai. Ghar se school tak safe delivery — bilkul sahi school hai!",                        color:"#E4F0FF"},
+              {name:"Priya Singh",  stars:5, quote:"Computer lab dekh ke khushi hui. Principal sir khud itna dhyan dete hain ki har baccha advance ho jaata hai.",           color:"#E4FFF5"},
+              {name:"Kavita Kumari",stars:5, quote:"Meri beti pehle shy thi, ab confident ho gayi. Speaking skills bahut develop hui hain — parents as parents we say thanks!",color:"#FFF3E0"},
+            ].map(t=>(
+              <div key={t.name} className="testi-card" style={{background:t.color}}>
+                <div className="testi-stars">{"⭐".repeat(t.stars).split("").map((_,i)=><span key={i}>⭐</span>)}</div>
+                <p className="testi-quote">"{t.quote}"</p>
+                <div className="testi-name">— {t.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ADMISSION ── */}
+      <section id="admission" className="sec" style={{background:"#fff"}}>
+        <div className="inner">
+          <div className="sec-tag">🎯 Admission Process</div>
+          <h2 className="sec-h2">Join in 4 Simple Steps ✅</h2>
+          <p className="sec-p">No scary exams. Just a friendly interaction — and your child's journey begins!</p>
+          <div className="steps-grid">
+            {STEPS.map(s=>(
+              <div key={s.n} className="step-card">
+                <div className="step-n" style={{background:s.color}}>{s.n}</div>
+                <div className="step-icon">{s.icon}</div>
+                <div className="step-title">{s.title}</div>
+                <div className="step-desc">{s.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:"center",marginTop:32,display:"flex",flexWrap:"wrap",gap:12,justifyContent:"center"}}>
+            <a href={TEL} className="btn-p">Start Today — Seats Filling Fast!</a>
+            <button className="btn-g" onClick={()=>scrollTo("contact")}>📋 Online Enquiry Form</button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA + FORM + MAP ── */}
+      <section id="contact" className="sec" style={{background:"linear-gradient(160deg,#fff5fb,#f4f0ff)"}}>
+        <div className="inner">
+          <div className="cta-band">
+            <div className="blob" style={{background:"rgba(255,255,255,.15)",width:300,height:300,top:-80,left:-80,filter:"blur(40px)"}}/>
+            <div style={{position:"relative",zIndex:1}}>
+              <div style={{fontSize:"2.5rem",marginBottom:10}}>🚨</div>
+              <h2>Admissions Open! Limited Seats</h2>
+              <p>Call or WhatsApp now — seats are filling fast for 2025–26!</p>
+              <div className="cta-btns">
+                <a href={TEL} className="btn-white">📞 Call Now — {PHONE_DISP}</a>
+                <a href={WA_ADMIT} className="btn-wa">💬 WhatsApp Kijiye</a>
+              </div>
+            </div>
+          </div>
+          <div className="form-wrap">
+            <h3 className="brand" style={{fontSize:"1.4rem",color:"var(--ink)",marginBottom:22,textAlign:"center"}}>📋 Quick Enquiry Form</h3>
+            <EnquiryForm/>
+          </div>
+          <div className="map-wrap">
+            <iframe title="Nandini Kids Academy Location"
+              src="https://www.google.com/maps?q=Dalmiyanagar+Rohtas+Bihar&output=embed"
+              width="100%" height="320" style={{border:0,display:"block"}}
+              loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen/>
+          </div>
+          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:16}}>
+            <a href="https://maps.google.com/?q=Dalmiyanagar+Rohtas+Bihar" target="_blank" rel="noreferrer" className="btn-p">🗺️ Get Directions</a>
+            <a href={TEL} className="btn-g">📞 Call for Directions</a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="sec" style={{background:"#fff"}}>
+        <div className="inner" style={{maxWidth:720}}>
+          <div className="sec-tag">❓ FAQ</div>
+          <h2 className="sec-h2">Parents Ke Common Sawal 🤔</h2>
+          <div style={{marginTop:32}}>
+            {FAQS.map(f=><FAQ key={f.q} q={f.q} a={f.a}/>)}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GALLERY PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function GalleryPage({ setPage }: { setPage: SetPage }) {
+  const [lb, setLb] = useState<LightboxState | null>(null);
+  const lbPrev = () => setLb(s => s ? { ...s, index: (s.index - 1 + s.album.images.length) % s.album.images.length } : s);
+  const lbNext = () => setLb(s => s ? { ...s, index: (s.index + 1) % s.album.images.length } : s);
+  useEffect(()=>{window.scrollTo(0,0)},[]);
+  return(
+    <main>
+      <Breadcrumb label="Gallery" setPage={setPage}/>
+      <div className="page-hero">
+        <div className="sec-tag" style={{margin:"0 auto 12px"}}>📸 Photo Gallery</div>
+        <h1>Activities & Celebrations</h1>
+        <p>Har activity ke photos alag album mein hain. Tap karo aur saari memories dekhein!</p>
+      </div>
+      <section className="sec" style={{background:"#fff"}}>
+        <div className="inner">
+          <div className="gal-grid">
+            {GALLERY_ALBUMS.map(a=>(
+              <div key={a.id} className="gal-card" onClick={()=>setLb({album:a,index:0})} style={{background:`${a.color}22`}}>
+                <img src={lp(a.images[0])} alt={a.title}
+                  style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                  onError={e=>{
+                    e.currentTarget.style.display="none";
+                    e.currentTarget.parentElement!.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;background:${a.color}22"><div style="font-size:3.5rem">${a.emoji}</div><div style="font-weight:800;color:${a.color};font-size:.95rem">${a.title}</div><div style="font-size:.75rem;color:#888">${a.desc}</div></div>`;
+                  }}/>
+                <div className="gal-overlay">
+                  <div className="gal-overlay-title">{a.title}</div>
+                  <div className="gal-overlay-desc">{a.desc} · {a.images.length} photo{a.images.length!==1?"s":""}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      {lb&&<GalleryLightbox album={lb.album} index={lb.index} onClose={()=>setLb(null)} onPrev={lbPrev} onNext={lbNext}/>}
+    </main>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTICE BOARD PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function NoticesPage({ setPage }: { setPage: SetPage }) {
+  const [filter,setFilter]=useState("All");
+  useEffect(()=>{window.scrollTo(0,0)},[]);
+  const cats=["All","Admission","Exam","Holiday","Event","General","Fee"];
+  const shown=filter==="All"?NOTICES:NOTICES.filter(n=>n.category===filter);
+  return(
+    <main>
+      <Breadcrumb label="Notice Board" setPage={setPage}/>
+      <div className="page-hero">
+        <div className="sec-tag" style={{margin:"0 auto 12px"}}>📢 Notice Board</div>
+        <h1>Latest Notices & Announcements</h1>
+        <p>School ke saare updates ek jagah — admissions, exams, events aur zyaada!</p>
+      </div>
+      <section className="sec" style={{background:"#fff"}}>
+        <div className="inner" style={{maxWidth:820}}>
+          <div style={{background:"#E8FBF5",border:"2px solid #52C9A8",borderRadius:12,padding:"10px 18px",marginBottom:24,display:"inline-block",fontSize:".82rem",color:"#1a6e54",fontWeight:700}}>
+            ✅ Showing {shown.length} notices · Last updated: March 2025
+          </div>
+          <div className="cat-filters">
+            {cats.map(c=>(
+              <button key={c} className={`cat-filter${filter===c?" active":""}`} onClick={()=>setFilter(c)}>{c}</button>
+            ))}
+          </div>
+          {shown.map((n,i)=>{
+            const cs=CAT_STYLE[n.category as NoticeCategory]||{bg:"#f0f0f0",color:"#555"};
+            return(
+              <div key={i} className={`notice-card${n.important?" imp":""}`}>
+                <div className="notice-head">
+                  <div>
+                    <span className="cat-pill" style={{background:cs.bg,color:cs.color,border:`1.5px solid ${cs.color}33`}}>{n.category}</span>
+                    {n.important&&<span className="imp-badge">⚡ Important</span>}
+                    <div className="notice-title" style={{marginTop:4}}>{n.title}</div>
+                  </div>
+                  <div className="notice-date">📅 {n.date}</div>
+                </div>
+                <p className="notice-body">{n.body}</p>
+              </div>
+            );
+          })}
+          <div style={{background:"linear-gradient(135deg,#E8FBF5,#E4F8FD)",border:"2px solid #52C9A8",borderRadius:16,padding:"20px 24px",textAlign:"center",marginTop:24}}>
+            <p style={{fontFamily:"'Baloo 2',cursive",fontSize:"1.05rem",color:"#1A5E7A",fontWeight:700,marginBottom:12}}>📲 Get Notices on WhatsApp!</p>
+            <p style={{fontSize:".87rem",color:"#555",marginBottom:16}}>School updates seedhe aapke phone pe.</p>
+            <a href={WA("Namaste! Mujhe school notices WhatsApp pe chahiye.")} className="btn-wa" style={{padding:"12px 26px"}}>💬 Join WhatsApp Group</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MANDATORY DISCLOSURE PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function DisclosurePage({ setPage }: { setPage: SetPage }) {
+  useEffect(()=>{window.scrollTo(0,0)},[]);
+  return(
+    <main>
+      <Breadcrumb label="Mandatory Disclosure" setPage={setPage}/>
+      <div className="page-hero">
+        <div className="sec-tag" style={{margin:"0 auto 12px"}}>📄 Mandatory Disclosure</div>
+        <h1>Mandatory Disclosure</h1>
+        <p>School ki official information as per regulatory requirements.</p>
+      </div>
+      <section className="sec" style={{background:"#fff"}}>
+        <div className="inner" style={{maxWidth:820}}>
+          {MANDATORY_DISCLOSURE.map(sec=>(
+            <div key={sec.section} className="disc-section">
+              <div className="disc-section-head">{sec.section}</div>
+              <table className="disc-table">
+                <tbody>
+                  {sec.items.map(([k,v])=>(
+                    <tr key={k}><td>{k}</td><td>{v}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          <div style={{background:"rgba(124,77,255,.06)",borderRadius:16,padding:"20px 22px",border:"1.5px solid rgba(124,77,255,.2)",marginTop:8}}>
+            <p style={{fontSize:".85rem",color:"#666",lineHeight:1.7}}>
+              📌 <strong>Note:</strong> For certified copies of any documents, please visit the school office during working hours (Monday–Saturday, 9 AM–3 PM) or contact us at {PHONE_DISP}.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BREADCRUMB
+// ─────────────────────────────────────────────────────────────────────────────
+function Breadcrumb({ label, setPage }: { label: string; setPage: SetPage }) {
+  return(
+    <div className="breadcrumb">
+      <div className="breadcrumb-inner">
+        <button onClick={()=>setPage("home")}>🏫 Home</button>
+        <span style={{margin:"0 8px",opacity:.4}}>›</span>
+        <span style={{color:"var(--ink)"}}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOT APP — client-side router + shared Nav/Footer
+// ─────────────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [page, setPage] = useState<PageId>("home");
+  const [quiz, setQuiz] = useState(false);
+
+  // Smooth scroll to section on home page
+  const scrollTo = useCallback((id: string) => {
+    const el=document.getElementById(id);
+    if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+  },[]);
+
+  // Lock body scroll when quiz/modal open
+  useEffect(()=>{document.body.style.overflow=quiz?"hidden":""},[quiz]);
+
+  // Keyboard ESC closes quiz
+  useEffect(()=>{
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setQuiz(false); };
+    window.addEventListener("keydown",fn);
+    return()=>window.removeEventListener("keydown",fn);
+  },[]);
+
+  return(
+    <>
+      <style>{GLOBAL_CSS}</style>
+      {/* extra inline style for mobile hero photo */}
       <style>{`
-        section[id], footer[id] {
-          scroll-margin-top: 76px;
-        }
-
-        /* Color Variables - Blazingly Colorful Theme */
-        :root {
-          --pink: #FF1493;
-          --purple: #8A2BE2;
-          --yellow: #FFD700;
-          --mint: #00FA9A;
-          --sky: #00BFFF;
-          --orange: #FF4500;
-          --red: #FF6347;
-          --green: #32CD32;
-          --cream: #FFFAF0;
-          --ink: #2C1810;
-        }
-
-        /* Reset & Base */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-          font-family: 'Poppins', sans-serif;
-          background: var(--cream);
-          color: #2C1810;
-          overflow-x: hidden;
-          line-height: 1.6;
-        }
-
-        /* Typography */
-        h1, h2, h3, .brand { font-family: 'Baloo 2', cursive; }
-        .nunito { font-family: 'Nunito', sans-serif; }
-
-        /* Buttons */
-        .btn-candy {
-          display: inline-block;
-          background: linear-gradient(135deg, var(--pink), var(--purple));
-          color: #fff;
-          font-weight: 700;
-          border-radius: 50px;
-          padding: 16px 32px;
-          font-size: 1rem;
-          box-shadow: 0 8px 32px rgba(255, 20, 147, 0.4);
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          text-decoration: none;
-          border: none;
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .btn-candy:hover {
-          transform: translateY(-6px) scale(1.05);
-          box-shadow: 0 16px 40px rgba(255, 20, 147, 0.6);
-        }
-
-        .btn-candy:active {
-          transform: translateY(-2px) scale(1.02);
-        }
-
-        .btn-ghost {
-          display: inline-block;
-          border: 3px solid var(--ink);
-          color: #2C1810;
-          font-weight: 700;
-          border-radius: 50px;
-          padding: 14px 28px;
-          font-size: 1rem;
-          background: transparent;
-          transition: all 0.3s ease;
-          text-decoration: none;
-          cursor: pointer;
-        }
-
-        .btn-ghost:hover {
-          background: var(--ink);
-          color: #fff;
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(44, 24, 16, 0.3);
-        }
-
-        /* Hero: readable CTAs on rainbow gradient (replaces washed-out transparent ghosts) */
-        .btn-hero-solid {
-          display: inline-block;
-          border: 2px solid rgba(44, 24, 16, 0.22);
-          color: #2C1810;
-          font-weight: 700;
-          border-radius: 50px;
-          padding: 14px 26px;
-          font-size: 1rem;
-          font-family: inherit;
-          background: linear-gradient(180deg, #fffef9 0%, #fff5e6 100%);
-          box-shadow: 0 6px 22px rgba(44, 24, 16, 0.18), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
-          transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-          text-decoration: none;
-          cursor: pointer;
-        }
-
-        .btn-hero-solid:hover {
-          background: #fff;
-          transform: translateY(-4px);
-          box-shadow: 0 12px 32px rgba(44, 24, 16, 0.22);
-        }
-
-        @keyframes heroCtaJump {
-          0%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-10px); }
-          55% { transform: translateY(0); }
-        }
-
-        .hero-cta-game {
-          background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
-          color: #fff !important;
-          border: 2px solid rgba(255, 255, 255, 0.55);
-          box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45), 0 4px 14px rgba(219, 39, 119, 0.35);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-          animation: heroCtaJump 1.35s ease-in-out infinite;
-        }
-
-        /* Must override .btn-hero-solid:hover (white bg) — same specificity order was losing background */
-        .btn-hero-solid.hero-cta-game:hover {
-          animation-play-state: paused;
-          background: linear-gradient(135deg, #6d28d9 0%, #c026d3 100%);
-          color: #fff !important;
-          border-color: rgba(255, 255, 255, 0.65);
-          transform: translateY(-5px) scale(1.02);
-          box-shadow: 0 14px 40px rgba(147, 51, 234, 0.5), 0 6px 20px rgba(219, 39, 119, 0.4);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Cards & Components */
-        .card {
-          background: #fff;
-          border-radius: 32px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .card:hover {
-          transform: translateY(-12px) rotate(1deg);
-          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
-        }
-
-        .pill {
-          display: inline-block;
-          padding: 8px 16px;
-          border-radius: 50px;
-          font-weight: 700;
-          font-size: 0.75rem;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        }
-
-        .hero-trust-stats {
-          width: 100%;
-          max-width: 520px;
-          margin-top: 4px;
-          margin-bottom: 2.85rem;
-        }
-
-        .hero-trust-bar {
-          display: flex;
-          flex-direction: row;
-          flex-wrap: nowrap;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 4px;
-          padding: 14px 10px 16px;
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.5);
-          border-radius: 18px;
-          box-shadow: 0 10px 36px rgba(44, 24, 16, 0.14);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-        }
-
-        .hero-trust-stat {
-          position: relative;
-          flex: 1 1 0;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 8px;
-          padding: 0 4px;
-        }
-
-        .hero-trust-stat:not(:first-child)::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 10%;
-          bottom: 14%;
-          width: 1px;
-          background: rgba(255, 255, 255, 0.42);
-          pointer-events: none;
-        }
-
-        .hero-trust-circle {
-          width: clamp(54px, 14vw, 74px);
-          height: clamp(54px, 14vw, 74px);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Baloo 2', cursive;
-          font-weight: 800;
-          font-size: clamp(0.95rem, 3.4vw, 1.2rem);
-          color: #2C1810;
-          line-height: 1;
-          background: linear-gradient(160deg, #ffffff 0%, #fff4e0 55%, #ffe0b8 100%);
-          border: 2px solid rgba(255, 255, 255, 0.95);
-          box-shadow: 0 6px 18px rgba(44, 24, 16, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-          flex-shrink: 0;
-        }
-
-        .hero-trust-label {
-          font-size: clamp(0.64rem, 2.3vw, 0.78rem);
-          font-weight: 800;
-          line-height: 1.25;
-          color: #fff;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-          letter-spacing: 0.02em;
-          padding: 0 2px;
-          max-width: 6.8rem;
-        }
-
-        .badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: linear-gradient(135deg, #FFF0FF, #F0F8FF);
-          border: 1px solid rgba(138, 43, 226, 0.2);
-          border-radius: 50px;
-          padding: 8px 20px;
-          margin-bottom: 16px;
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: #8A2BE2;
-          letter-spacing: 0.05em;
-          box-shadow: 0 2px 14px rgba(138, 43, 226, 0.08);
-        }
-
-        /* Soft frames — replaces heavy rainbow borders */
-        .photo-frame {
-          background: rgba(255, 255, 255, 0.97);
-          border-radius: 20px;
-          padding: 10px;
-          border: 1px solid rgba(44, 24, 16, 0.08);
-          box-shadow: 0 14px 44px rgba(44, 24, 16, 0.1);
-          overflow: hidden;
-        }
-
-        .quote-panel {
-          background: #fff;
-          border-radius: 24px;
-          padding: 24px;
-          margin-bottom: 24px;
-          border: 1px solid rgba(44, 24, 16, 0.07);
-          box-shadow: 0 12px 40px rgba(44, 24, 16, 0.09);
-          border-left: 4px solid rgba(255, 20, 147, 0.42);
-        }
-
-        .principal-testimonial {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          padding: 28px 20px 24px;
-          border-left: none;
-          border-top: 3px solid rgba(255, 20, 147, 0.35);
-        }
-
-        .principal-testimonial-photo {
-          width: min(200px, 72vw);
-          height: min(200px, 72vw);
-          border-radius: 50%;
-          object-fit: cover;
-          object-position: center center;
-          flex-shrink: 0;
-          margin-bottom: 20px;
-          border: 4px solid rgba(255, 255, 255, 0.95);
-          box-shadow: 0 10px 28px rgba(44, 24, 16, 0.18);
-        }
-
-        .principal-testimonial-quote {
-          margin: 0;
-          max-width: 38rem;
-          font-size: 1.05rem;
-          color: #444;
-          line-height: 1.65;
-          font-style: italic;
-          font-weight: 400;
-        }
-
-        .principal-quote-attribution {
-          margin-top: 12px;
-          font-weight: 800;
-          font-size: 1.05rem;
-          color: #2C1810;
-          text-align: center;
-        }
-
-        .child-game-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 1100;
-          background: rgba(44, 24, 16, 0.45);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 16px;
-          animation: childGameFadeIn 0.2s ease;
-        }
-
-        @keyframes childGameFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        .child-game-modal {
-          width: min(100%, 420px);
-          max-height: min(90vh, 720px);
-          overflow-y: auto;
-          background: #fff;
-          border-radius: 24px;
-          box-shadow: 0 24px 64px rgba(44, 24, 16, 0.2);
-          position: relative;
-          border: 1px solid rgba(44, 24, 16, 0.08);
-        }
-
-        .child-game-close {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          width: 40px;
-          height: 40px;
-          border: none;
-          border-radius: 50%;
-          background: rgba(44, 24, 16, 0.08);
-          color: #2C1810;
-          font-size: 1.35rem;
-          line-height: 1;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2;
-        }
-
-        .child-game-close:hover {
-          background: rgba(44, 24, 16, 0.14);
-        }
-
-        .child-game-option {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          width: 100%;
-          text-align: left;
-          min-height: 56px;
-          padding: 14px 16px;
-          border-radius: 16px;
-          border: 2px solid rgba(44, 24, 16, 0.1);
-          background: #fff;
-          font-size: 1rem;
-          font-weight: 600;
-          color: #2C1810;
-          cursor: pointer;
-          transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-        }
-
-        .child-game-option:hover {
-          border-color: rgba(138, 43, 226, 0.45);
-          background: rgba(138, 43, 226, 0.06);
-          transform: scale(1.01);
-        }
-
-        .child-game-option .child-game-option-icon {
-          font-size: 1.75rem;
-          line-height: 1;
-          flex-shrink: 0;
-        }
-
-        /* Step numbers sit inside the card (not clipped by .card overflow) */
-        .admission-step-card {
-          overflow: visible;
-        }
-
-        .video-placeholder-panel {
-          background: #fff;
-          border-radius: 24px;
-          padding: 40px;
-          text-align: center;
-          border: 1px dashed rgba(44, 24, 16, 0.12);
-          box-shadow: 0 10px 36px rgba(44, 24, 16, 0.07);
-          margin-bottom: 20px;
-        }
-
-        /* Animations */
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
-        }
-
-        @keyframes float2 {
-          0%, 100% { transform: translateY(0px) rotate(-2deg); }
-          50% { transform: translateY(-15px) rotate(2deg); }
-        }
-
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(-8deg); }
-          50% { transform: rotate(8deg); }
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes walk {
-          0% { transform: translateX(-100px); }
-          100% { transform: translateX(calc(100vw + 100px)); }
-        }
-
-        @keyframes peek {
-          0%, 100% { transform: translateX(-60px); }
-          50% { transform: translateX(0px); }
-        }
-
-        @keyframes wave {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(20deg); }
-          75% { transform: rotate(-20deg); }
-        }
-
-        .float { animation: float 4s ease-in-out infinite; }
-        .float2 { animation: float2 5s ease-in-out infinite; }
-        .wiggle { animation: wiggle 3s ease-in-out infinite; }
-        .bounce { animation: bounce 2s ease-in-out infinite; }
-        .spin-slow { animation: spin-slow 25s linear infinite; }
-        .walk { animation: walk 15s linear infinite; }
-        .peek { animation: peek 6s ease-in-out infinite; }
-        .wave { animation: wave 2s ease-in-out infinite; }
-
-        /* Animal Mascots */
-        .parrot-mascot {
-          position: absolute;
-          right: 20px;
-          top: 20px;
-          font-size: 2rem;
-          cursor: pointer;
-          transition: transform 0.3s ease;
-        }
-
-        .parrot-mascot:hover {
-          transform: scale(1.1);
-        }
-
-        .butterfly-mascot {
-          position: absolute;
-          font-size: 2rem;
-          z-index: 50;
-        }
-
-        .walking-animal {
-          position: fixed;
-          bottom: 100px;
-          font-size: 2rem;
-          z-index: 50;
-        }
-
-        /* Sound Toggle - Above Navbar */
-        .sound-toggle {
-          position: fixed;
-          top: 80px;
-          right: 20px;
-          z-index: 400;
-          background: linear-gradient(135deg, #FFD700, #FFA500);
-          border: 1px solid rgba(44, 24, 16, 0.15);
-          border-radius: 50%;
-          width: 42px;
-          height: 42px;
-          font-size: 0.85rem;
-          cursor: pointer;
-          box-shadow: 0 4px 14px rgba(255, 215, 0, 0.5);
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.04); }
-        }
-
-        .sound-toggle:hover {
-          transform: scale(1.12);
-          box-shadow: 0 6px 18px rgba(255, 215, 0, 0.75);
-        }
-
-        .sound-toggle:active {
-          transform: scale(0.95);
-        }
-
-        .music-indicator {
-          position: fixed;
-          top: 128px;
-          right: 20px;
-          z-index: 350;
-          max-width: 140px;
-          line-height: 1.25;
-          background: linear-gradient(135deg, #FF1493, #8A2BE2);
-          color: white;
-          padding: 5px 9px;
-          border-radius: 10px;
-          font-size: 0.68rem;
-          font-weight: 700;
-          box-shadow: 0 3px 8px rgba(255, 20, 147, 0.35);
-          opacity: 0;
-          transform: translateY(6px);
-          pointer-events: none;
-          transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .music-indicator.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .music-indicator.visible.playing {
-          animation: musicPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes musicPulse {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(0) scale(1.03); }
-        }
-
-        /* Sticky Bottom Bar */
-        .sticky-bar {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          z-index: 200;
-          background: linear-gradient(135deg, var(--pink), var(--purple));
-          padding: 12px 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-          box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
-          animation: slideUp 0.5s ease-out;
-        }
-
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-
-        /* Reveal Animation */
-        .reveal {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: all 0.8s ease;
-        }
-
-        .reveal.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        /* Utility Classes */
-        .flex { display: flex; }
-        .flex-wrap { flex-wrap: wrap; }
-        .flex-col { flex-direction: column; }
-        .items-center { align-items: center; }
-        .items-start { align-items: flex-start; }
-        .justify-center { justify-content: center; }
-        .justify-between { justify-content: space-between; }
-        .gap-2 { gap: 8px; }
-        .gap-3 { gap: 12px; }
-        .gap-4 { gap: 16px; }
-        .gap-5 { gap: 20px; }
-        .gap-6 { gap: 24px; }
-        .gap-8 { gap: 32px; }
-        .gap-10 { gap: 40px; }
-        .gap-12 { gap: 48px; }
-        .grid { display: grid; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .mb-4 { margin-bottom: 16px; }
-        .mb-8 { margin-bottom: 32px; }
-        .mb-12 { margin-bottom: 48px; }
-        .mt-8 { margin-top: 32px; }
-        .p-6 { padding: 24px; }
-        .p-8 { padding: 32px; }
-        .px-5 { padding-left: 20px; padding-right: 20px; }
-        .py-3 { padding-top: 12px; padding-bottom: 12px; }
-        .relative { position: relative; }
-        .absolute { position: absolute; }
-        .hidden { display: none; }
-        .text-center { text-align: center; }
-        .max-w-6xl { max-width: 72rem; margin-left: auto; margin-right: auto; }
-        .w-full { width: 100%; }
-        .overflow-hidden { overflow: hidden; }
-
-        /* Responsive */
-        @media (min-width: 768px) {
-          .md\\:flex { display: flex; }
-          .md\\:hidden { display: none; }
-          .md\\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-          .md\\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-          .md\\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-          .md\\:text-left { text-align: left; }
-        }
-
-        /* Responsive GIF Animations */
-        @media (max-width: 768px) {
-          .hero-monkey {
-            width: 400px !important;
-            height: 400px !important;
-            top: 8% !important;
-            left: 1% !important;
-          }
-          
-          .section-kid-running {
-            width: 260px !important;
-            height: 260px !important;
-            top: 5% !important;
-            right: 2% !important;
-          }
-          
-          .section-horse {
-            width: 75px !important;
-            height: 75px !important;
-            top: 0 !important;
-            right: 0 !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .hero-monkey {
-            width: 280px !important;
-            height: 280px !important;
-            top: 5% !important;
-            left: 0% !important;
-          }
-          
-          .section-kid-running {
-            width: 220px !important;
-            height: 220px !important;
-            top: 3% !important;
-            right: 1% !important;
-          }
-          
-          .section-horse {
-            width: 40px !important;
-            height: 40px !important;
-            top: 0 !important;
-            right: 0 !important;
-          }
-        }
-
-        /* FAQ Accordion */
-        .accordion {
-          border: none;
-          background: #fff;
-          border-radius: 20px;
-          margin-bottom: 16px;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          transition: all 0.3s ease;
-        }
-
-        .accordion:hover {
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        }
-
-        .accordion-header {
-          width: 100%;
-          padding: 20px 24px;
-          background: none;
-          border: none;
-          text-align: left;
-          font-weight: 700;
-          font-size: 1rem;
-          color: #2C1810;
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .accordion-content {
-          padding: 0 24px 20px;
-          color: #666;
-          line-height: 1.6;
-        }
-
-        .accordion-icon {
-          transition: transform 0.3s ease;
-        }
-
-        .accordion.active .accordion-icon {
-          transform: rotate(180deg);
-        }
-
-        /* Lightbox */
-        .lightbox {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.8);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.3s ease;
-        }
-
-        .lightbox.active {
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .lightbox img {
-          max-width: 90%;
-          max-height: 90%;
-          border-radius: 16px;
-        }
-
-        .lightbox-close {
-          position: absolute;
-          top: 20px;
-          right: 30px;
-          font-size: 2rem;
-          color: white;
-          cursor: pointer;
-          background: none;
-          border: none;
-        }
+        .hero-photo-half-mob{display:block}
+        @media(min-width:768px){.hero-photo-half-mob{display:none!important}.hero-photo-half{display:block!important}}
+        .hero-photo-half{display:none}
       `}</style>
 
-      {/* SOUND TOGGLE - Enhanced with Music Control */}
-      <button 
-        className="sound-toggle" 
-        onClick={() => {
-          const newSoundState = !soundEnabled;
-          setSoundEnabled(newSoundState);
-          
-          if (backgroundMusicRef.current) {
-            if (newSoundState && bgMusicStartedRef.current) {
-              backgroundMusicRef.current.play().catch(() => {});
-            } else {
-              backgroundMusicRef.current.pause();
-            }
-          }
-          
-          // Play a confirmation sound when enabling
-          if (newSoundState) {
-            setTimeout(() => playCtaBell(), 100);
-          }
-        }}
-        onMouseEnter={() => playSound('chirp')}
-        title={soundEnabled ? "🔊 Click to mute all sounds & music" : "🔇 Click to enable sounds & music"}
-      >
-        {soundEnabled ? "🔊" : "🔇"}
-      </button>
+      <Nav page={page} setPage={setPage} scrollTo={scrollTo}/>
 
-      {/* MUSIC INDICATOR */}
-      <div
-        className={`music-indicator${soundEnabled ? " visible" : ""}${soundEnabled && backgroundMusicStarted ? " playing" : ""}`}
-      >
-        {backgroundMusicStarted
-          ? "🎵 Background music playing"
-          : "🎵 Scroll to play music"}
-      </div>
+      {page==="home"     && <HomePage    setPage={setPage} scrollTo={scrollTo} openQuiz={()=>setQuiz(true)}/>}
+      {page==="gallery"  && <GalleryPage setPage={setPage}/>}
+      {page==="notices"  && <NoticesPage setPage={setPage}/>}
+      {page==="disclosure"&&<DisclosurePage setPage={setPage}/>}
 
-      {/* STICKY BOTTOM CTA BAR */}
+      <Footer setPage={setPage} scrollTo={scrollTo}/>
+
+      {/* Sticky bottom bar */}
       <div className="sticky-bar">
-        <a 
-          href={telHref} 
-          className="btn-candy" 
-          style={{padding:"12px 20px", fontSize:"0.9rem", background:"white", color:"#8A2BE2"}}
-          onClick={() => playCtaBell()}
-        >
-        Call Now
-        </a>
-        <a 
-          href={waWithText("Hello! I would like to know more about Nandini Kids Academy.")} 
-          className="btn-candy" 
-          style={{padding:"12px 20px", fontSize:"0.9rem", background:"#25D366", color:"white"}}
-          onClick={() => playCtaBell()}
-        >
-          WhatsApp
-        </a>
-        <a 
-          href="#enquiry" 
-          className="btn-ghost" 
-          style={{borderColor:"white", color:"white", padding:"12px 20px", fontSize:"0.9rem"}}
-          onClick={() => playCtaBell()}
-        >
-          Enquire
-        </a>
+        <a href={TEL} className="sb-call">📞 Call</a>
+        <a href={WA_DEFAULT} className="sb-wa">💬 WhatsApp</a>
+        <button className="sb-enq" onClick={()=>{setPage("home");requestAnimationFrame(()=>setTimeout(()=>scrollTo("contact"),80))}}>📋 Enquire</button>
       </div>
 
-      {/* 1. HERO SECTION */}
-      <section style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: "60px",
-        paddingBottom: "40px",
-        background: "linear-gradient(135deg, #FF69B4 0%, #FFD700 25%, #00FA9A 50%, #00BFFF 75%, #FF4500 100%)",
-        position: "relative",
-        overflow: "hidden"
-      }}>
-        {/* Animated Background Elements */}
-        <div className="butterfly-mascot float" style={{top: "10%", left: "10%"}}>🦋</div>
-        <div className="butterfly-mascot float2" style={{top: "20%", right: "15%"}}>🦋</div>
-        
-        {/* Animated GIF: Monkey swinging - COVERS ENTIRE WIDTH */}
-        <img 
-          src={lp("monkey swinging through a vine.gif")} 
-          alt="Monkey swinging" 
-          className="float hero-monkey" 
-          style={{
-            position: "absolute", 
-            top: "10%", 
-            left: "2%", 
-            width: "600px", 
-            height: "600px", 
-            opacity: 0.8,
-            zIndex: 10,
-            pointerEvents: "none"
-          }} 
-        />
-        
-        
-        <div className="spin-slow" style={{position: "absolute", top: "5%", right: "5%", fontSize: "4rem", opacity: 0.3}}>⭐</div>
-        <div className="spin-slow" style={{position: "absolute", bottom: "10%", left: "5%", fontSize: "3rem", opacity: 0.3, animationDirection: "reverse"}}>🌟</div>
-
-        {/* display:contents so headline/CTA (z-25) and photo (z-5) stack with monkey (z-10) in the section */}
-        <div style={{ display: "contents" }}>
-          <div
-            className="max-w-6xl px-5 w-full"
-            style={{
-              marginLeft: "auto",
-              marginRight: "auto",
-              position: "relative",
-              zIndex: 25
-            }}
-          >
-            <div className="badge">
-              🏫 Dalmiyanagar's Most Trusted School
-            </div>
-            <h1 style={{
-              fontSize: "clamp(2.5rem, 6vw, 4rem)",
-              lineHeight: 1.1,
-              color: "white",
-              marginBottom: "24px",
-              textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
-            }}>
-              A Safe, Caring & English-Medium School for Your Child's 
-              <span style={{
-                background: "linear-gradient(135deg, #FFD700, #FF4500)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text"
-              }}> Bright Future</span> ✨
-            </h1>
-            <p style={{
-              fontSize: "1.2rem",
-              color: "white",
-              lineHeight: 1.7,
-              marginBottom: "20px",
-              textShadow: "1px 1px 2px rgba(0,0,0,0.3)"
-            }}>
-              Admissions Open for Nursery to Class 5 | Limited Seats
-            </p>
-            
-            {/* Trust stats — single row, frosted bar */}
-            <div className="hero-trust-stats">
-              <div className="hero-trust-bar">
-                {[
-                  { value: "100%", label: "Secured Environment" },
-                  { value: "15+", label: "Years Experience" },
-                  { value: "100%", label: "Parent Satisfaction" },
-                ].map(({ value, label }) => (
-                  <div key={label} className="hero-trust-stat">
-                    <div className="hero-trust-circle">{value}</div>
-                    <div className="hero-trust-label">{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 mb-8" style={{ marginTop: "4px" }}>
-              <a 
-                href="#admission" 
-                className="btn-candy" 
-                onClick={() => {playCtaBell(); /* Trigger animal wave animation */}}
-              >
-                ✅ Book a School Visit
-              </a>
-              <a
-                href={telHref}
-                className="btn-hero-solid"
-                onClick={() => playCtaBell()}
-              >
-                Call Now
-              </a>
-              <button
-                type="button"
-                className="btn-hero-solid hero-cta-game"
-                onClick={openChildGame}
-                style={{
-                  fontSize: "clamp(0.88rem, 2.4vw, 1rem)",
-                  padding: "14px 22px",
-                }}
-              >
-                🎮 Let&apos;s play a game to know your child
-              </button>
-            </div>
-          </div>
-
-          <div
-            className="max-w-6xl px-5 w-full"
-            style={{
-              marginLeft: "auto",
-              marginRight: "auto",
-              position: "relative",
-              zIndex: 5
-            }}
-          >
-            <div className="photo-frame" style={{ textAlign: "center" }}>
-              <img
-                src={lp("nandini real school photo.jpeg")}
-                alt="Students and teachers at Nandini Kids Academy"
-                style={{
-                  width: "100%",
-                  maxHeight: "280px",
-                  objectFit: "cover",
-                  borderRadius: "12px",
-                  display: "block"
-                }}
-              />
-              <div style={{ fontSize: "0.85rem", color: "#555", marginTop: "10px", fontWeight: 600 }}>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. WHY PARENTS CHOOSE US */}
-      <section style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #FFE4E1 0%, #F0FFFF 50%, #F5FFFA 100%)",
-        position: "relative"
-      }} className="reveal">
-        
-        {/* Animated GIF: Kid running to school - MOVED to horse position with 2x size */}
-        <img 
-          src={lp("kid going school running..gif")} 
-          alt="Kid running to school" 
-          className="bounce section-kid-running" 
-          style={{
-            position: "absolute", 
-            top: "10%", 
-            right: "5%", 
-            width: "340px", 
-            height: "340px", 
-            opacity: 0.9,
-            zIndex: 15
-          }} 
-        />
-        
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">👩‍🏫 Why Parents Choose Us ?</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-              School Aisa jahan Bache Khud daud ke aana chahe !
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: "👩‍🏫",
-                title: "Experienced & caring teachers",
-                desc: "20+ dedicated teachers jo bachon ko samjhate hain pyaar se",
-                bg: "linear-gradient(135deg, #FFE4E1, #FFC0CB)"
-              },
-              {
-                icon: "📚",
-                title: "Strong academic foundation",
-                desc: "For a strong academic curve right from the beginning!",
-                bg: "linear-gradient(135deg, #E0FFFF, #B0E0E6)"
-              },
-              {
-                icon: "🛡️",
-                title: "Safe campus & CCTV",
-                desc: "24/7 CCTV and secure boundary wall.",
-                bg: "linear-gradient(135deg, #F5FFFA, #98FB98)"
-              },
-              {
-                icon: "🚌",
-                title: "Transport facility",
-                desc: "Door to door safe transport available.",
-                bg: "linear-gradient(135deg, #FFF8DC, #F0E68C)"
-              },
-              {
-                icon: "🗣️",
-                title: "Focus on spoken English",
-                desc: "So they have a great communication.",
-                bg: "linear-gradient(135deg, #E6E6FA, #DDA0DD)"
-              },
-              {
-                icon: "🎨",
-                title: "Activity-based learning",
-                desc: "Hamare bachhon ke liye padhai bojh nahi khel hai !",
-                bg: "linear-gradient(135deg, #FFEFD5, #FFE4B5)"
-              }
-            ].map(({icon, title, desc, bg}) => (
-              <div key={title} className="card p-8" style={{background: bg, border: "1px solid rgba(255,255,255,0.65)"}}>
-                <div style={{fontSize: "3rem", marginBottom: "16px", textAlign: "center"}}>{icon}</div>
-                <h3 style={{
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                  color: "#2C1810",
-                  marginBottom: "12px",
-                  textAlign: "center"
-                }}>
-                  {title}
-                </h3>
-                <p style={{
-                  color: "#555",
-                  lineHeight: 1.6,
-                  textAlign: "center",
-                  fontSize: "0.95rem"
-                }}>
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3. ABOUT THE SCHOOL */}
-      <section id="about" style={{
-        padding: "80px 0",
-        position: "relative",
-        overflow: "hidden",
-        backgroundColor: "#FFF8FB",
-        backgroundImage: `
-          linear-gradient(90deg, rgba(255, 192, 203, 0.28) 50%, rgba(186, 230, 253, 0.28) 50%),
-          linear-gradient(rgba(209, 250, 229, 0.26) 50%, rgba(255, 236, 200, 0.26) 50%)
-        `,
-        backgroundSize: "40px 40px"
-      }} className="reveal">
-        
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto", position: "relative", zIndex: 1 }}>
-          <div style={{ textAlign: "center", marginBottom: "56px" }}>
-            <div
-              className="badge"
-              style={{ fontSize: "1.1rem", padding: "12px 28px", marginBottom: "20px" }}
-            >
-              About the School
-            </div>
-            <h2 style={{
-              fontSize: "clamp(2.85rem, 7vw, 4.5rem)",
-              color: "#2C1810",
-              marginTop: "12px",
-              marginBottom: "0",
-              lineHeight: 1.12,
-              fontWeight: 800,
-              maxWidth: "52rem",
-              marginLeft: "auto",
-              marginRight: "auto",
-              textShadow: "0 1px 0 rgba(255,255,255,0.85)"
-            }}>
-              Every child is special. Every child is a star.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="quote-panel principal-testimonial">
-                <img
-                  className="principal-testimonial-photo"
-                  src={lp(PRINCIPAL_PORTRAIT_FILE)}
-                  alt="Principal and director, Nandini Kids Academy"
-                  width={200}
-                  height={200}
-                />
-                <p className="principal-testimonial-quote">
-                  {"\u201cWe don\u2019t just teach \u2014 we also install values in children. Here, every child is special, every child is a star. Along with quality education, meaningful academic outcomes, we also teach Indian values.\u201d"}
-                </p>
-                <div className="principal-quote-attribution">
-                  {"\u2014 Principal \u0026 Director, Nandini Kids Academy"}
-                </div>
-              </div>
-
-              <div className="photo-frame" style={{ textAlign: "center" }}>
-                <img
-                  src={lp("teacher community group.jpg")}
-                  alt="Nandini Kids Academy teachers and staff"
-                  style={{
-                    width: "100%",
-                    maxHeight: "260px",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    display: "block"
-                  }}
-                />
-                <div style={{ fontSize: "1.05rem", color: "#444", marginTop: "12px", fontWeight: 600 }}>
-                  Hamari dedicated teacher community — Bachon ka dusra parivaar
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div style={{
-                background: "linear-gradient(135deg, #FFD700, #FF4500)",
-                borderRadius: "32px",
-                padding: "32px",
-                color: "white",
-                textAlign: "center",
-                position: "relative",
-                overflow: "hidden"
-              }}>
-                <div style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundImage: "radial-gradient(rgba(255,255,255,0.2) 2px, transparent 2px)",
-                  backgroundSize: "20px 20px"
-                }}></div>
-                
-                <div style={{fontSize: "4rem", marginBottom: "16px"}} className="bounce">🎓</div>
-                <h3 style={{fontSize: "clamp(1.95rem, 3.5vw, 2.15rem)", marginBottom: "16px", fontWeight: 800}}>
-Our Achivements 
-                </h3>
-                <p style={{fontSize: "clamp(1.12rem, 2.2vw, 1.25rem)", marginBottom: "20px", opacity: 0.95, lineHeight: 1.6}}>
-                Since 2019, We have successfully transformed thousands of children into confident and successful individuals.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  {[
-                    {number: "1000+", label: "Happy Students"},
-                    {number: "100%", label: "Parent Satisfaction"},
-                    {number: "15+", label: "Years Experience"},
-                    {number: "20+", label: "Expert Teachers"}
-                  ].map(({number, label}) => (
-                    <div key={label} style={{
-                      background: "rgba(255,255,255,0.2)",
-                      borderRadius: "16px",
-                      padding: "16px 8px"
-                    }}>
-                      <div style={{fontSize: "1.5rem", fontWeight: 800}}>{number}</div>
-                      <div style={{fontSize: "0.8rem", opacity: 0.9}}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. REAL SCHOOL LIFE (Photo/Video Section) */}
-      <section id="gallery" style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #E6E6FA 0%, #F0F8FF 50%, #FFF8DC 100%)",
-        position: "relative"
-      }} className="reveal">
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{ position: "relative", textAlign: "center", marginBottom: "60px", paddingTop: "8px" }}>
-            <img
-              src={lp("kids toy horse moving..gif")}
-              alt=""
-              aria-hidden
-              className="float2 section-horse"
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "125px",
-                height: "125px",
-                opacity: 0.85,
-                zIndex: 0,
-                pointerEvents: "none",
-              }}
-            />
-            <div className="badge" style={{ position: "relative", zIndex: 1 }}>
-              School Life at Nandini Kids
-            </div>
-            <h2
-              style={{
-                position: "relative",
-                zIndex: 1,
-                fontSize: "clamp(2rem, 4vw, 3rem)",
-                color: "#2C1810",
-                marginBottom: "16px",
-                paddingLeft: "clamp(0px, 4vw, 100px)",
-                paddingRight: "clamp(0px, 4vw, 140px)",
-              }}
-            >
-              Enjoyment and Activities at NandiniKids
-            </h2>
-          </div>
-
-          {/* Photo grid — real campus & celebration photos */}
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            {GALLERY_ALBUMS.map(({ id, title, description, images }) => {
-              const file = images[0];
-              const src = lp(file);
-              return (
-                <div
-                  key={id}
-                  className="card p-0 overflow-hidden"
-                  style={{
-                    background: "white",
-                    cursor: "pointer",
-                    borderRadius: "20px",
-                    border: "1px solid rgba(44, 24, 16, 0.07)",
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setLightboxSrc(src);
-                      setLightboxAlt(title);
-                      setLightboxOpen(true);
-                      playCtaBell();
-                    }
-                  }}
-                  onClick={() => {
-                    setLightboxSrc(src);
-                    setLightboxAlt(title);
-                    setLightboxOpen(true);
-                    playCtaBell();
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={title}
-                    style={{
-                      width: "100%",
-                      height: "180px",
-                      objectFit: "cover",
-                      display: "block",
-                      borderRadius: "14px 14px 0 0",
-                    }}
-                  />
-                  <div className="p-4" style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 700, fontSize: "1.05rem", color: "#2C1810", marginBottom: "6px" }}>
-                      {title}
-                    </div>
-                    <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                      {description}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ textAlign: "center", marginBottom: "36px" }}>
-            <Link
-              href="/gallery"
-              onClick={playCtaBell}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                padding: "14px 28px",
-                borderRadius: "28px",
-                background: "linear-gradient(135deg,#FF9944,#E06800)",
-                color: "#fff",
-                fontFamily: "'Baloo 2', cursive",
-                fontSize: "1.05rem",
-                fontWeight: 800,
-                textDecoration: "none",
-                boxShadow: "0 4px 16px rgba(255,153,68,.35)",
-              }}
-            >
-              Explore full gallery
-            </Link>
-            <p style={{ marginTop: "14px", fontSize: "0.92rem", color: "#555" }}>
-              Activity-wise albums — har celebration ke saari photos ek jagah.
-            </p>
-          </div>
-
-          {/* Video Placeholder */}
-          <div className="video-placeholder-panel">
-            <div style={{fontSize: "5rem", marginBottom: "20px"}}>📹</div>
-            <h3 style={{fontSize: "1.5rem", fontWeight: 700, color: "#2C1810", marginBottom: "12px"}}>
-              School Walkthrough Video
-            </h3>
-            <p style={{color: "#666", fontSize: "1rem", marginBottom: "16px"}}>
-              YouTube embed placeholder - Virtual tour of our campus
-            </p>
-            <div style={{
-              background: "#f0f0f0",
-              borderRadius: "12px",
-              padding: "20px",
-              fontSize: "0.9rem",
-              color: "#888"
-            }}>
-              [YouTube Video Embed Here - School Tour]
-            </div>
-          </div>
-
-          <div style={{
-            background: "linear-gradient(135deg, #FFD700, #FF4500)",
-            borderRadius: "20px",
-            padding: "20px",
-            textAlign: "center",
-            color: "white"
-          }}>
-            <div style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: "6px" }}>
-            </div>
-            <div style={{ fontSize: "0.95rem", opacity: 0.95 }}>
-              Real school moments — celebrations, enjoyment and learning with happiness.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. ACADEMICS & CURRICULUM */}
-      <section style={{
-        padding: "80px 0",
-        background: "#fff",
-        position: "relative"
-      }} className="reveal">
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">🧠 Academics & Curriculum</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-              English Medium for a Strong Foundation 📚
-            </h2>
-            <p style={{color: "#666", fontSize: "1.1rem"}}>
-              Nursery se Class 5 tak - har class mein quality education
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div style={{
-                background: "linear-gradient(135deg, #00FA9A, #00BFFF)",
-                borderRadius: "24px",
-                padding: "32px",
-                color: "white",
-                marginBottom: "24px"
-              }}>
-                <h3 style={{fontSize: "1.8rem", marginBottom: "20px", fontWeight: 800}}>
-                  Classes Available 🎓
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    "Nursery", "LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"
-                  ].map((cls) => (
-                    <div key={cls} style={{
-                      background: "rgba(255,255,255,0.2)",
-                      borderRadius: "12px",
-                      padding: "12px",
-                      textAlign: "center",
-                      fontWeight: 700
-                    }}>
-                      {cls}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              
-            </div>
-
-            <div>
-              <h3 style={{fontSize: "1.5rem", fontWeight: 700, color: "#2C1810", marginBottom: "24px"}}>
-                Our Teaching Approach 👩‍🏫
-              </h3>
-              
-              <div className="flex flex-col gap-4">
-                {[
-                  {
-                    icon: "🎨",
-                    title: "Activity-based learning",
-                    desc: "Khel khel mein sikhaate hain - boring lectures nahi",
-                    bg: "linear-gradient(135deg, #FFE4E1, #FFC0CB)"
-                  },
-                  {
-                    icon: "📝",
-                    title: "Regular tests",
-                    desc: "Monthly tests se progress track karte hain",
-                    bg: "linear-gradient(135deg, #E0FFFF, #B0E0E6)"
-                  },
-                  {
-                    icon: "👥",
-                    title: "Personal attention for every child",
-                    desc: "Every child is special. Every child is a star!",
-                    bg: "linear-gradient(135deg, #F5FFFA, #98FB98)"
-                  }
-                ].map(({icon, title, desc, bg}) => (
-                  <div key={title} style={{
-                    background: bg,
-                    borderRadius: "16px",
-                    padding: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    border: "1px solid rgba(255,255,255,0.45)"
-                  }}>
-                    <div style={{fontSize: "2.5rem"}}>{icon}</div>
-                    <div>
-                      <div style={{fontWeight: 700, fontSize: "1.1rem", color: "#2C1810", marginBottom: "4px"}}>
-                        {title}
-                      </div>
-                      <div style={{color: "#555", fontSize: "0.95rem"}}>
-                        {desc}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. SAFETY & FACILITIES / INFRASTRUCTURE */}
-      <section id="infrastructure" style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #F0FFF0 0%, #F5F5DC 50%, #FFF8DC 100%)",
-        position: "relative"
-      }} className="reveal">
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div
-            className="photo-frame"
-            style={{
-              maxWidth: "720px",
-              margin: "0 auto 48px",
-              borderRadius: "24px",
-              padding: 0,
-            }}
-          >
-            <img
-              src={lp("nandini real school photo.jpeg")}
-              alt="Nandini Kids Academy campus and facilities"
-              style={{ width: "100%", maxHeight: "340px", objectFit: "cover", display: "block" }}
-            />
-            <div style={{ background: "#fff", padding: "14px 18px", textAlign: "center", fontWeight: 700, color: "#2C1810" }}>
-             A campus — Designed with safety, cleanliness and full of life. 
-            </div>
-          </div>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">🛡️ Safety & Facilities</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-Our Facilities            </h2>
-            <p style={{color: "#666", fontSize: "1.1rem"}}>
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              {
-                icon: "📹",
-                title: "CCTV surveillance (24/7)",
-                desc: "Poore campus mein cameras- safety in every corner",
-                color: "#FF6347"
-              },
-              {
-                icon: "👩‍🏫",
-                title: "Female staff for small kids",
-                desc: "Chhote bachon ke liye lady teachers available",
-                color: "#FF1493"
-              },
-              {
-                icon: "🚽",
-                title: "Clean toilets",
-                desc: "Separate boys and girls toilets",
-                color: "#00BFFF"
-              },
-              {
-                icon: "💧",
-                title: "Safe drinking water",
-                desc: "RO water - health ka pura khayal",
-                color: "#00FA9A"
-              },
-              {
-                icon: "🚌",
-                title: "Transport available",
-                desc: "Trained and sincere Drivers for safe transportation.",
-                color: "#FF4500"
-              },
-              {
-                icon: "🏗️",
-                title: "Secured boundary walls",
-                desc: "Strong wall",
-                color: "#8A2BE2"
-              }
-            ].map(({icon, title, desc, color}) => (
-              <div key={title} className="card p-6" style={{
-                background: "white",
-                border: "1px solid rgba(44, 24, 16, 0.06)",
-                borderTop: `3px solid ${color}`,
-              }}>
-                <div className="flex items-center gap-4">
-                  <div style={{
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    background: color,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "2rem",
-                    color: "white"
-                  }}>
-                    ✅
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: "2rem",
-                      marginBottom: "8px"
-                    }}>
-                      {icon}
-                    </div>
-                  </div>
-                </div>
-                <h3 style={{
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                  color: "#2C1810",
-                  marginBottom: "8px",
-                  marginTop: "16px"
-                }}>
-                  {title}
-                </h3>
-                <p style={{
-                  color: "#555",
-                  fontSize: "1rem",
-                  lineHeight: 1.6
-                }}>
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. PARENT TESTIMONIALS */}
-      <section id="testimonials" style={{
-        padding: "80px 0",
-        background: "#fff",
-        position: "relative"
-      }} className="reveal">
-        <div 
-          className="parrot-mascot float" 
-          onClick={() => playSound('chirp')}
-          onMouseEnter={() => playSound('giggle')}
-          title="🦜 Click me for parrot sounds!"
-        >
-          🦜
-        </div>
-        
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">🗣️ Parent Testimonials</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-What does the parents say?            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sunita Devi",
-                quote: "Mere bacche ki padhai 6 mahine mein bahut improve hui hai. Teacher bahut caring hain aur daily update dete hain.",
-                rating: 5,
-                bg: "linear-gradient(135deg, #FFE4E1, #FFC0CB)"
-              },
-              {
-                name: "Rajesh Kumar",
-                quote: "Transport facility bahut achhi hai. Ghar se school tak safe delivery rahta hai.",
-                rating: 5,
-                bg: "linear-gradient(135deg, #E0FFFF, #B0E0E6)"
-              },
-              {
-                name: "Priya Singh",
-                quote: "Computer lab dekh kar bahut khushi hui. Principal sir khud itna dhyan dete hain ki har bachha computer me starting se hi advance ho jata hai",
-                rating: 5,
-                bg: "linear-gradient(135deg, #F5FFFA, #98FB98)"
-              },
-              {
-                name: "Amit Sharma",
-                quote: "Fees reasonable hai aur quality education mil rahi hai. Principal Sir bahut supportive hain.",
-                rating: 4,
-                bg: "linear-gradient(135deg, #FFF8DC, #F0E68C)"
-              },
-              {
-                name: "Kavita Kumari",
-                quote: "Meri beti pehle shy thi, ab confident ho gayi hai. Speaking skills bahut develop hui hain.",
-                rating: 5,
-                bg: "linear-gradient(135deg, #E6E6FA, #DDA0DD)"
-              }
-            ].map(({name, quote, rating, bg}) => (
-              <div key={name} className="card p-6" style={{background: bg, border: "1px solid rgba(255,255,255,0.7)"}}>
-                {/* Placeholder for parent photo */}
-                <div style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.85)",
-                  border: "1px solid rgba(44, 24, 16, 0.1)",
-                  boxShadow: "0 4px 14px rgba(44, 24, 16, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 16px",
-                  fontSize: "2rem"
-                }}>
-                  👤
-                </div>
-                
-                <div style={{textAlign: "center", marginBottom: "16px"}}>
-                  <div className="flex justify-center gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} style={{
-                        color: i < rating ? "#FFD700" : "#ddd",
-                        fontSize: "1.2rem"
-                      }}>
-                        ⭐
-                      </span>
-                    ))}
-                  </div>
-                  <h4 style={{
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    color: "#2C1810",
-                    marginBottom: "4px"
-                  }}>
-                    {name}
-                  </h4>
-                </div>
-                
-                <p style={{
-                  fontSize: "1rem",
-                  color: "#444",
-                  lineHeight: 1.6,
-                  fontStyle: "italic",
-                  textAlign: "center"
-                }}>
-                  "{quote}"
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 8. ADMISSION PROCESS */}
-      <section id="admission" style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #FFF0F5 0%, #F0F8FF 50%, #F5FFFA 100%)",
-        position: "relative"
-      }} className="reveal">
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">🎯 Admission Process</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-              Take Admission in 4 simple steps
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-  {[
-    {
-      step: 1,
-      icon: "📞",
-      title: "Call or fill the form",
-      desc: "Make an enquiry by calling or fill out the online form",
-      color: "#FF1493"
-    },
-    {
-      step: 2,
-      icon: "🏫",
-      title: "Visit the school",
-      desc: "Explore the campus, meet the teachers, and check the facilities",
-      color: "#8A2BE2"
-    },
-    {
-      step: 3,
-      icon: "👦",
-      title: "Interaction with the child",
-      desc: "A simple interaction – no scary exam",
-      color: "#00FA9A"
-    },
-    {
-      step: 4,
-      icon: "✅",
-      title: "Admission confirmed!",
-      desc: "Complete the documents and secure admission",
-      color: "#FF4500"
-    }
-            ].map(({step, icon, title, desc, color}) => (
-              <div
-                key={step}
-                className="card admission-step-card p-6"
-                style={{
-                  background: "white",
-                  border: "1px solid rgba(44, 24, 16, 0.06)",
-                  borderTop: `3px solid ${color}`,
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  paddingTop: "28px",
-                }}
-              >
-                <div
-                  aria-hidden
-                  style={{
-                    width: "44px",
-                    height: "44px",
-                    borderRadius: "50%",
-                    background: color,
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                    fontSize: "1.15rem",
-                    flexShrink: 0,
-                    marginBottom: "12px",
-                    boxShadow: "0 4px 12px rgba(44, 24, 16, 0.12)",
-                  }}
-                >
-                  {step}
-                </div>
-                <div style={{ fontSize: "3rem", marginBottom: "12px", lineHeight: 1 }}>
-                  {icon}
-                </div>
-                <h3 style={{
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                  color: "#2C1810",
-                  marginBottom: "12px",
-                  lineHeight: 1.3,
-                }}>
-                  {title}
-                </h3>
-                <p style={{
-                  color: "#555",
-                  fontSize: "0.95rem",
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}>
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: "center", display: "flex", flexWrap: "wrap", gap: "12px", justifyContent: "center" }}>
-            <a 
-              href={telHref} 
-              className="btn-candy" 
-              onClick={() => playCtaBell()}
-            >
-              Start Today — Seats Filling Fast!
-            </a>
-            <a
-              href="#enquiry"
-              className="btn-ghost"
-              style={{ borderColor: "#8A2BE2", color: "#8A2BE2", background: "white" }}
-              onClick={() => playCtaBell()}
-            >
-              📋 Online Enquiry Form
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. STRONG CALL-TO-ACTION SECTION */}
-      <section id="enquiry" style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #FF6347, #FF4500)",
-        position: "relative",
-        overflow: "visible",
-        zIndex: 1
-      }} className="reveal">
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "radial-gradient(rgba(255,255,255,0.2) 2px, transparent 2px)",
-          backgroundSize: "30px 30px"
-        }}></div>
-        
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div style={{fontSize: "4rem", marginBottom: "20px"}} className="bounce">🚨</div>
-            <h2 style={{
-              fontSize: "clamp(2.5rem, 5vw, 4rem)",
-              color: "white",
-              marginBottom: "20px",
-              fontWeight: 800,
-              textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
-            }}>
-              Admissions Open!- Limited Seats Available, Hurry Up!
-            </h2>
-            <p style={{
-              fontSize: "1.3rem",
-              color: "white",
-              opacity: 0.9,
-              textShadow: "1px 1px 2px rgba(0,0,0,0.3)"
-            }}>
-            Contact us now!
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            {/* Contact Options */}
-            <div>
-              <div style={{
-                background: "white",
-                borderRadius: "24px",
-                padding: "32px",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.2)"
-              }}>
-                <h3 style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  color: "#2C1810",
-                  marginBottom: "24px",
-                  textAlign: "center"
-                }}>
-                </h3>
-                
-                <div className="flex flex-col gap-4">
-                  <a 
-                    href={telHref} 
-                    className="btn-candy"
-                    style={{
-                      fontSize: "1.2rem",
-                      padding: "16px 24px",
-                      textAlign: "center",
-                      background: "linear-gradient(135deg, #00FA9A, #00BFFF)"
-                    }}
-                    onClick={() => playCtaBell()}
-                  >
-                    📞 Call Now — {phoneDisplay}
-                  </a>
-                  
-                  <a 
-                    href={waWithText("Hello! I want to know about admission for my child in Nandini Kids Academy")} 
-                    className="btn-candy"
-                    style={{
-                      fontSize: "1.2rem",
-                      padding: "16px 24px",
-                      textAlign: "center",
-                      background: "#25D366"
-                    }}
-                    onClick={() => playCtaBell()}
-                  >
-                    💬 WhatsApp Kijiye
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Enquiry Form */}
-            <div>
-              <div style={{
-                background: "white",
-                borderRadius: "24px",
-                padding: "32px",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.2)",
-                position: "relative",
-                zIndex: 20
-              }}>
-                <h3 style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  color: "#2C1810",
-                  marginBottom: "24px",
-                  textAlign: "center"
-                }}>
-                  📋 Quick Enquiry Form
-                </h3>
-                
-                <form 
-                  className="flex flex-col gap-4"
-                  style={{position: "relative", zIndex: 30}}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    console.log('Form submitted:', formData);
-                    playSound('cheer');
-                    alert(`Thank you ${formData.parentName || 'Guest'}! Hum aapko call karenge.`);
-                    // Reset form
-                    setFormData({parentName: '', phoneNumber: '', childClass: ''});
-                  }}
-                >
-                  <div>
-                    <label style={{
-                      display: "block",
-                      fontWeight: 600,
-                      color: "#2C1810",
-                      marginBottom: "8px"
-                    }}>
-                      Parent Name *
-                    </label>
-                    <input 
-                      type="text" 
-                      required
-                      value={formData.parentName}
-                      onChange={(e) => {
-                        console.log('Name changed:', e.target.value);
-                        setFormData({...formData, parentName: e.target.value});
-                      }}
-                      onClick={() => console.log('Name input clicked')}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(44, 24, 16, 0.12)",
-                        fontSize: "1rem",
-                        outline: "none",
-                        backgroundColor: "white",
-                        position: "relative",
-                        zIndex: 10,
-                        pointerEvents: "auto"
-                      }}
-                      placeholder="Aapka naam"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label style={{
-                      display: "block",
-                      fontWeight: 600,
-                      color: "#2C1810",
-                      marginBottom: "8px"
-                    }}>
-                      Phone Number *
-                    </label>
-                    <input 
-                      type="tel" 
-                      required
-                      value={formData.phoneNumber}
-                      onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(44, 24, 16, 0.12)",
-                        fontSize: "1rem",
-                        outline: "none",
-                        backgroundColor: "white",
-                        position: "relative",
-                        zIndex: 10
-                      }}
-                      placeholder="Mobile number"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label style={{
-                      display: "block",
-                      fontWeight: 600,
-                      color: "#2C1810",
-                      marginBottom: "8px"
-                    }}>
-                      Child's Class
-                    </label>
-                    <select 
-                      value={formData.childClass}
-                      onChange={(e) => setFormData({...formData, childClass: e.target.value})}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(44, 24, 16, 0.12)",
-                        fontSize: "1rem",
-                        outline: "none",
-                        backgroundColor: "white",
-                        position: "relative",
-                        zIndex: 10,
-                        cursor: "pointer"
-                      }}
-                    >
-                      <option value="">Select class</option>
-                      <option value="Nursery">Nursery</option>
-                      <option value="LKG">LKG</option>
-                      <option value="UKG">UKG</option>
-                      <option value="Class 1">Class 1</option>
-                      <option value="Class 2">Class 2</option>
-                      <option value="Class 3">Class 3</option>
-                      <option value="Class 4">Class 4</option>
-                      <option value="Class 5">Class 5</option>
-                    </select>
-                  </div>
-                  
-                  <button 
-                    type="submit" 
-                    className="btn-candy"
-                    style={{
-                      fontSize: "1.1rem",
-                      padding: "14px 24px",
-                      marginTop: "8px"
-                    }}
-                  >
-                    Submit & Get Call Back 🎉
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 10. LOCATION + MAP */}
-      <section id="location" style={{
-        padding: "80px 0",
-        background: "#fff",
-        position: "relative"
-      }} className="reveal">
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">📍 Location + Map</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-              Lets Visit Us! 😄
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div style={{
-              borderRadius: "24px",
-              overflow: "hidden",
-              border: "1px solid rgba(44, 24, 16, 0.08)",
-              minHeight: "400px",
-              background: "#e8f8f0",
-              boxShadow: "0 14px 44px rgba(44, 24, 16, 0.1)"
-            }}>
-              <iframe
-                title="Nandini Kids Academy — Dehri, Rohtas, Bihar"
-                src="https://www.google.com/maps?q=Dehri+on+Son+Rohtas+Bihar+821307&output=embed"
-                width="100%"
-                height="420"
-                style={{ border: 0, display: "block" }}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
-            </div>
-
-            {/* Location Details */}
-            <div>
-              <div className="flex flex-col gap-6">
-                <div style={{
-                  background: "linear-gradient(135deg, #FFE4E1, #FFC0CB)",
-                  borderRadius: "20px",
-                  padding: "24px",
-                  border: "1px solid rgba(255,255,255,0.65)",
-                  boxShadow: "0 8px 28px rgba(44, 24, 16, 0.07)"
-                }}>
-                  <div className="flex items-center gap-4 mb-3">
-                    <div style={{fontSize: "2.5rem"}}>📍</div>
-                    <h3 style={{fontSize: "1.3rem", fontWeight: 700, color: "#2C1810"}}>
-                      Address
-                    </h3>
-                  </div>
-                  <p style={{fontSize: "1.1rem", color: "#444", lineHeight: 1.6}}>
-                    <strong>Nandini Kids 'N' Academy</strong><br/>
-                    Dalmiyanagar, Rohtas, Bihar<br/>
-                                   </p>
-                </div>
-
-               
-
-                <div className="flex flex-wrap gap-4">
-                  <a 
-                    href="https://maps.google.com/?q=Dalmiyanagar+Rohtas+Bihar" 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="btn-candy"
-                    onClick={() => playCtaBell()}
-                  >
-                    🗺️ Get Directions
-                  </a>
-                  <a 
-                    href={telHref} 
-                    className="btn-ghost"
-                    onClick={() => playCtaBell()}
-                  >
-                    📞 Call for Directions
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 11. FAQ SECTION */}
-      <section style={{
-        padding: "80px 0",
-        background: "linear-gradient(135deg, #F5F5DC 0%, #FFF8DC 50%, #FFFACD 100%)",
-        position: "relative"
-      }} className="reveal">
-        <div 
-          className="parrot-mascot" 
-          style={{right: "20px", top: "20px"}} 
-          onClick={() => playSound('chirp')}
-          onMouseEnter={() => playSound('giggle')}
-          title="🦜 Click me for parrot sounds!"
-        >
-          🦜
-        </div>
-        
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div style={{textAlign: "center", marginBottom: "60px"}}>
-            <div className="badge">❓ FAQ Section</div>
-            <h2 style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#2C1810",
-              marginBottom: "16px"
-            }}>
-              Parents Ke Common Questions 🤔
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-             
-             
-              {
-                question: "Is transport available?",
-                answer: "Yes, we provide door-to-door transport. Buses have GPS tracking, so you can see the live location. Transport fees are charged separately."
-              },
-              {
-                question: "What is the medium of instruction?",
-                answer: "The school follows English medium, but Hindi is also taught. Children become comfortable in both languages. We also focus on improving speaking skills."
-              },
-              {
-                question: "What is the age requirement for admission?",
-                answer: "For Nursery, the child should be 3 years old. For LKG, 4 years, and for UKG, 5 years. A birth certificate is required as age proof."
-              },
-              {
-                question: "Is the school CBSE or State Board?",
-                answer: "We follow the CBSE pattern, but we are officially affiliated with the State Board. The quality of education is similar to CBSE."
-              },
-              {
-                question: "Is the campus safe and monitored?",
-                answer: "Yes, the entire campus is covered with CCTV and monitored 24/7, ensuring complete safety for students."
-              }
-            
-            ].map(({question, answer}, index) => (
-              <div key={index} className="accordion">
-                <button 
-                  className="accordion-header"
-                  onClick={(e) => {
-                    const accordion = e.currentTarget.parentElement;
-                    const content = accordion?.querySelector('.accordion-content') as HTMLElement;
-                    const icon = accordion?.querySelector('.accordion-icon') as HTMLElement;
-                    
-                    if (accordion?.classList.contains('active')) {
-                      accordion.classList.remove('active');
-                      if (content) content.style.display = 'none';
-                    } else {
-                      // Close all other accordions
-                      document.querySelectorAll('.accordion.active').forEach(acc => {
-                        acc.classList.remove('active');
-                        const accContent = acc.querySelector('.accordion-content') as HTMLElement;
-                        if (accContent) accContent.style.display = 'none';
-                      });
-                      
-                      accordion?.classList.add('active');
-                      if (content) content.style.display = 'block';
-                      playCtaBell();
-                    }
-                  }}
-                >
-                  <span style={{fontSize: "1.1rem"}}>{question}</span>
-                  <span className="accordion-icon" style={{fontSize: "1.5rem"}}>⬇️</span>
-                </button>
-                <div className="accordion-content" style={{display: "none"}}>
-                  {answer}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 12. FOOTER */}
-      <footer style={{
-        background: "linear-gradient(135deg, #2C1810, #1a1a2e)",
-        color: "#fff",
-        padding: "60px 0 120px",
-        position: "relative"
-      }}>
-        <div className="max-w-6xl px-5" style={{marginLeft: "auto", marginRight: "auto"}}>
-          <div className="grid md:grid-cols-3 gap-12 mb-12">
-            {/* School Info */}
-            <div>
-              <div className="flex items-center gap-4 mb-6">
-                <div style={{
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "20px",
-                  background: "linear-gradient(135deg, #FF1493, #8A2BE2)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2rem"
-                }}>
-                  🎀
-                </div>
-                <div>
-                  <div style={{fontSize: "1.3rem", fontWeight: 800, marginBottom: "4px"}}>
-                    Nandini Kids 'N' Academy
-                  </div>
-                  <div style={{fontSize: "0.9rem", color: "#aaa"}}>
-                    Dalmiyanagar, Rohtas, Bihar · Est. 2019
-                  </div>
-                </div>
-              </div>
-              <p style={{color: "#ccc", fontSize: "1rem", lineHeight: 1.7, marginBottom: "20px"}}>
-                "Every child is special. Every child is a star!" 
-            </p>
-              
-              {/* Trust Badges */}
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "Since 2019", "1000+ Happy Students", "100% Parent Satisfaction", "Safe & Caring Environment"
-                ].map((badge) => (
-                  <span key={badge} className="pill" style={{
-                    background: "rgba(255,255,255,0.1)",
-                    color: "#fff",
-                    fontSize: "0.7rem"
-                  }}>
-                    {badge}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 style={{fontSize: "1.3rem", fontWeight: 700, marginBottom: "20px"}}>
-                Quick Links
-              </h3>
-              <div className="flex flex-col gap-3">
-                {[
-                  {href: "#about", label: "About School"},
-                  {href: "#infrastructure", label: "Safety & Facilities"},
-                  {href: "#testimonials", label: "Parent Reviews"},
-                  {href: "#enquiry", label: "Admission Enquiry"}
-                ].map(({href, label}) => (
-                  <a 
-                    key={href} 
-                    href={href} 
-                    style={{
-                      color: "#ccc",
-                      textDecoration: "none",
-                      fontSize: "1rem",
-                      transition: "color 0.3s ease"
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.color = "#FFD700"}
-                    onMouseOut={(e) => e.currentTarget.style.color = "#ccc"}
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div>
-              <h3 style={{fontSize: "1.3rem", fontWeight: 700, marginBottom: "20px"}}>
-                Contact Info
-              </h3>
-              <div className="flex flex-col gap-4">
-                <div style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
-                  <div style={{fontSize: "1.5rem"}}>📍</div>
-                  <div>
-                    <div style={{fontWeight: 600, marginBottom: "4px"}}>Address</div>
-                    <div style={{color: "#ccc", fontSize: "0.95rem", lineHeight: 1.6}}>
-                      Dalmiyanagar, Rohtas, Bihar<br/>
-                      
-                    </div>
-                  </div>
-                </div>
-                
-                <div style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
-                  <div style={{fontSize: "1.5rem"}}>📞</div>
-                  <div>
-                    <div style={{fontWeight: 600, marginBottom: "4px"}}>Phone</div>
-                    <div style={{color: "#ccc", fontSize: "0.95rem"}}>
-                      {phoneDisplay}
-                    </div>
-                  </div>
-                </div>
-                
-                <div style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
-                  <div style={{fontSize: "1.5rem"}}>🎓</div>
-                  <div>
-                    <div style={{fontWeight: 600, marginBottom: "4px"}}>Classes</div>
-                    <div style={{color: "#ccc", fontSize: "0.95rem"}}>
-                      Nursery to Class 5<br/>
-                      English Medium
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Footer */}
-          <div style={{
-            borderTop: "1px solid rgba(44, 24, 16, 0.12)",
-            paddingTop: "24px",
-            textAlign: "center"
-          }}>
-            <div style={{fontSize: "1rem", color: "#888", marginBottom: "8px"}}>
-              © 2026 Nandini Kids 'N' Academy, Dalmiyanagar, Rohtas, Bihar. All rights reserved.
-            </div>
-            <div style={{fontSize: "0.9rem"}}>
-              <span style={{color: "#FFD700"}}>Made with 💜 for little stars</span>
-              {" · "}
-              <span style={{color: "#aaa"}}></span>
-            </div>
-          </div>
-        </div>
-
-      </footer>
-
-      {childGameOpen && (
-        <div
-          className="child-game-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Know your child — quick quiz"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeChildGame();
-          }}
-        >
-          <div className="child-game-modal" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="child-game-close" onClick={closeChildGame} aria-label="Close">
-              ×
-            </button>
-            <div style={{ padding: "24px 20px 28px" }}>
-              {childGamePhase === "intro" && (
-                <>
-                  <div style={{ textAlign: "center", marginBottom: "22px", paddingRight: "28px" }}>
-                    <div style={{ fontSize: "2.75rem", marginBottom: "10px", lineHeight: 1 }}>🎯</div>
-                    <h2
-                      style={{
-                        fontFamily: "'Baloo 2', cursive",
-                        fontSize: "clamp(1.3rem, 4.5vw, 1.5rem)",
-                        color: "#2C1810",
-                        margin: "0 0 10px",
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      Let&apos;s play a game to know your child
-                    </h2>
-                    <p style={{ color: "#555", fontSize: "0.98rem", lineHeight: 1.55, margin: 0 }}>
-                      Three quick questions — big buttons, made for phones. Pick what feels most like your little one!
-                    </p>
-                  </div>
-                  <button type="button" className="btn-candy" style={{ width: "100%" }} onClick={startChildGameQuiz}>
-                    Start
-                  </button>
-                </>
-              )}
-
-              {childGamePhase === "questions" &&
-                (() => {
-                  const q = CHILD_GAME_QUESTIONS[childGamePicks.length];
-                  if (!q) return null;
-                  const qi = childGamePicks.length;
-                  return (
-                    <>
-                      <p
-                        style={{
-                          fontSize: "0.78rem",
-                          fontWeight: 700,
-                          color: "#8A2BE2",
-                          margin: "0 0 8px",
-                          letterSpacing: "0.06em",
-                        }}
-                      >
-                        QUESTION {qi + 1} OF {CHILD_GAME_QUESTIONS.length}
-                      </p>
-                      <h3
-                        style={{
-                          fontFamily: "'Baloo 2', cursive",
-                          fontSize: "clamp(1.15rem, 3.8vw, 1.28rem)",
-                          color: "#2C1810",
-                          margin: "0 0 16px",
-                          lineHeight: 1.35,
-                        }}
-                      >
-                        {q.prompt}
-                      </h3>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        {q.options.map((opt) => (
-                          <button
-                            key={opt.label}
-                            type="button"
-                            className="child-game-option"
-                            onClick={() => pickChildGameAnswer(opt.trait)}
-                          >
-                            <span className="child-game-option-icon">{opt.icon}</span>
-                            <span>{opt.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-
-              {childGamePhase === "result" && childGameResultKey && (
-                <>
-                  <div style={{ textAlign: "center", marginBottom: "18px", paddingTop: "8px" }}>
-                    <div style={{ fontSize: "clamp(2.75rem, 10vw, 3.25rem)", lineHeight: 1 }}>
-                      {CHILD_GAME_RESULT_COPY[childGameResultKey].emoji}
-                    </div>
-                    <h3
-                      style={{
-                        fontFamily: "'Baloo 2', cursive",
-                        fontSize: "clamp(1.2rem, 4vw, 1.38rem)",
-                        color: "#2C1810",
-                        margin: "14px 0 0",
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {CHILD_GAME_RESULT_COPY[childGameResultKey].title}
-                    </h3>
-                  </div>
-                  <p
-                    style={{
-                      color: "#444",
-                      fontSize: "clamp(0.98rem, 3vw, 1.05rem)",
-                      lineHeight: 1.6,
-                      margin: "0 0 22px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {CHILD_GAME_RESULT_COPY[childGameResultKey].blurb}
-                  </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <button
-                      type="button"
-                      className="btn-candy"
-                      style={{ width: "100%", fontSize: "clamp(0.92rem, 3.2vw, 1rem)", padding: "15px 16px", lineHeight: 1.35 }}
-                      onClick={() => scrollToSectionThenCloseGame("gallery")}
-                    >
-                      👉 See how we develop this skill in our classrooms
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      style={{ width: "100%", fontSize: "clamp(0.92rem, 3.2vw, 1rem)", padding: "14px 16px", lineHeight: 1.35 }}
-                      onClick={() => scrollToSectionThenCloseGame("admission")}
-                    >
-                      👉 Book a free school visit
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* LIGHTBOX for gallery photos */}
-      <div
-        className={`lightbox${lightboxOpen ? " active" : ""}`}
-        id="lightbox"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Enlarged photo"
-        onClick={() => setLightboxOpen(false)}
-      >
-        <button
-          type="button"
-          className="lightbox-close"
-          onClick={(e) => {
-            e.stopPropagation();
-            setLightboxOpen(false);
-          }}
-        >
-          ✕
-        </button>
-        <img src={lightboxSrc || undefined} alt={lightboxAlt} onClick={(e) => e.stopPropagation()} />
-      </div>
+      {quiz&&<Quiz onClose={()=>setQuiz(false)} goTo={(id: string)=>{setPage("home");requestAnimationFrame(()=>setTimeout(()=>scrollTo(id),80))}}/>}
     </>
   );
 }
